@@ -1,0 +1,225 @@
+{% extends 'dashboard/base_dashboard_new.html' %}
+{% load humanize %}
+
+{% block title %}Savings Management - {{ group.name }}{% endblock %}
+
+{% block page_title %}Savings Management for {{ group.name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="bg-white rounded-xl shadow-2xl p-6 md:p-8">
+    <!-- Group Info Header -->
+    <div class="border-b border-gray-200 pb-4 mb-6 md:mb-8">
+        <h2 class="text-2xl md:text-3xl font-semibold text-gray-800 flex items-center">
+            <i class="fas fa-wallet text-mangi-red mr-3"></i>{{ group.name }} - Member Savings
+        </h2>
+        <p class="text-gray-600 mt-2">
+            {% if min_saving and max_saving %}
+                Saving Range: 
+                <span class="font-bold text-mangi-red text-lg">{{ min_saving|floatformat:0|intcomma }} - {{ max_saving|floatformat:0|intcomma }} TZS</span>
+            {% elif min_saving %}
+                Minimum Saving: 
+                <span class="font-bold text-mangi-red text-lg">{{ min_saving|floatformat:0|intcomma }} TZS</span>
+            {% elif max_saving %}
+                Maximum Saving: 
+                <span class="font-bold text-mangi-red text-lg">{{ max_saving|floatformat:0|intcomma }} TZS</span>
+            {% else %}
+                <span class="text-gray-500 italic">No saving limits configured</span>
+            {% endif %}
+        </p>
+    </div>
+    
+    <!-- Record Saving Form -->
+    <div class="bg-gray-50 rounded-xl p-6 mb-8 shadow-md">
+        <h3 class="text-xl font-semibold text-gray-700 mb-5 flex items-center">
+            <i class="fas fa-plus-circle text-bright-red mr-2"></i>Record New Saving
+        </h3>
+        
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-4">
+                <div class="md:col-span-5">
+                    <label for="member_select" class="block text-sm font-medium text-gray-700 mb-1">Select Member</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-user-check text-gray-400"></i>
+                        </div>
+                        <select id="member_select" name="member_id" class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-bright-red focus:border-bright-red pl-10 pr-10 py-3 shadow-sm bg-white appearance-none" required>
+                            <option value="">-- Select a member --</option>
+                            {% for member in group_members %}
+                                <option value="{{ member.id }}">{{ member.user.name }} ({{member.user.username}})</option>
+                            {% endfor %}
+                        </select>
+                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="md:col-span-3">
+                    <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-dollar-sign text-gray-400"></i>
+                        </div>
+                        <input type="number" id="amount" name="amount" step="0.01" 
+                               class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-bright-red focus:border-bright-red pl-10 pr-4 py-3 shadow-sm bg-white" 
+                               placeholder="0.00" required 
+                               {% if min_saving %}min="{{ min_saving }}"{% endif %}
+                               {% if max_saving %}max="{{ max_saving }}"{% endif %} />
+                    </div>
+                    {% if min_saving or max_saving %}
+                    <p class="text-xs text-gray-500 mt-1">
+                        {% if min_saving and max_saving %}
+                            Between {{ min_saving|floatformat:0|intcomma }} - {{ max_saving|floatformat:0|intcomma }} TZS
+                        {% elif min_saving %}
+                            Minimum: {{ min_saving|floatformat:0|intcomma }} TZS
+                        {% elif max_saving %}
+                            Maximum: {{ max_saving|floatformat:0|intcomma }} TZS
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <div class="md:col-span-4">
+                    <label for="saved_on" class="block text-sm font-medium text-gray-700 mb-1">Date Saved (Optional)</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-calendar text-gray-400"></i>
+                        </div>
+                        <input type="date" id="saved_on" name="saved_on" 
+                               class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-bright-red focus:border-bright-red pl-10 pr-4 py-3 shadow-sm bg-white" />
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button type="submit" class="bg-bright-red hover:bg-ruby-red text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-150 flex items-center">
+                    <i class="fas fa-check-circle mr-2"></i>Record Saving
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Members Savings Overview -->
+    <div class="mt-8">
+        <h3 class="text-xl font-semibold text-gray-700 mb-5 flex items-center">
+            <i class="fas fa-list-alt text-mangi-red mr-2"></i>Members Savings Overview
+        </h3>
+        
+        <div class="bg-white overflow-x-auto rounded-lg shadow-md border border-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Member Name</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Username</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Total Savings</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Number of Deposits</th>
+                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for member_info in members_savings_status %}
+                    <tr class="hover:bg-gray-50 transition-colors duration-150">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="text-sm font-medium text-gray-900">{{ member_info.member.user.name }}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ member_info.member.user.username }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <div class="text-lg font-bold text-green-600">
+                                {{ member_info.total_saved|floatformat:0|intcomma }} TZS
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ member_info.savings_count }} deposits
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <button onclick="toggleDetails('member_{{ member_info.member.id }}')" 
+                                    class="text-bright-red hover:text-ruby-red font-medium text-sm">
+                                <i class="fas fa-eye mr-1"></i>View Details
+                            </button>
+                        </td>
+                    </tr>
+                    <!-- Expandable Details Row -->
+                    <tr id="member_{{ member_info.member.id }}" class="hidden bg-gray-50">
+                        <td colspan="5" class="px-6 py-4">
+                            <div class="bg-white rounded-lg p-4 shadow-inner">
+                                <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                                    <i class="fas fa-history text-mangi-red mr-2"></i>
+                                    Savings History for {{ member_info.member.user.name }}
+                                </h4>
+                                {% if member_info.recent_savings %}
+                                    <div class="overflow-x-auto">
+                                        <table class="min-w-full text-sm">
+                                            <thead class="bg-gray-100">
+                                                <tr>
+                                                    <th class="px-4 py-2 text-left">Date Saved</th>
+                                                    <th class="px-4 py-2 text-center">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-200">
+                                                {% for saving in member_info.recent_savings %}
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-4 py-2">
+                                                        <i class="fas fa-calendar-day text-gray-500 mr-2"></i>
+                                                        {{ saving.saved_on|date:"M d, Y" }}
+                                                    </td>
+                                                    <td class="px-4 py-2 text-center font-semibold text-green-600">
+                                                        {{ saving.amount|floatformat:0|intcomma }} TZS
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% if member_info.savings_count > 5 %}
+                                        <p class="mt-2 text-xs text-gray-500 text-center">
+                                            Showing last 5 of {{ member_info.savings_count }} total savings
+                                        </p>
+                                    {% endif %}
+                                    <div class="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                                        <p class="text-sm text-gray-700">
+                                            <i class="fas fa-piggy-bank text-green-600 mr-2"></i>
+                                            <span class="font-semibold">Total Saved:</span> 
+                                            <span class="text-green-700 font-bold text-lg">{{ member_info.total_saved|floatformat:0|intcomma }} TZS</span>
+                                        </p>
+                                    </div>
+                                {% else %}
+                                    <p class="text-gray-500 text-center py-4">No savings recorded yet.</p>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <i class="fas fa-users-slash fa-3x text-gray-400 mb-3"></i>
+                                <p class="text-lg">No members found in this group.</p>
+                                <p class="text-sm">Once members are added, their savings will appear here.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleDetails(rowId) {
+    const detailsRow = document.getElementById(rowId);
+    if (detailsRow.classList.contains('hidden')) {
+        detailsRow.classList.remove('hidden');
+    } else {
+        detailsRow.classList.add('hidden');
+    }
+}
+</script>
+{% endblock %}

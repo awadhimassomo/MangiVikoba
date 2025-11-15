@@ -1,0 +1,138 @@
+{% extends 'dashboard/super_admin/base.html' %}
+
+{% block subtitle %}Manage all system users and their roles{% endblock %}
+
+{% block content %}
+<!-- Search and Filters -->
+<div class="card p-6 mb-6">
+    <form method="get" class="flex flex-wrap gap-4">
+        <div class="flex-1 min-w-[250px]">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <input type="text" name="search" value="{{ search_query }}"
+                   placeholder="Search by name, phone, or email..."
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+        </div>
+        
+        <div class="w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+            <select name="role" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                <option value="">All Roles</option>
+                {% for value, label in role_choices %}
+                <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="flex items-end gap-2">
+            <button type="submit" class="btn-primary">Search</button>
+            <a href="{% url 'dashboard:super_admin:user_management' %}" class="btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">User</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Contact</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Role</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Joined</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Verified</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for user in page_obj %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="py-4 px-6">
+                        <div class="flex items-center">
+                            <div class="bg-accent-main rounded-full h-10 w-10 flex items-center justify-center text-primary-dark font-bold mr-3">
+                                {{ user.name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">{{ user.name }}</p>
+                                {% if user.is_superuser %}
+                                <span class="text-xs badge badge-danger">Superuser</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <p class="text-sm text-gray-800">{{ user.phone_number }}</p>
+                        {% if user.email %}
+                        <p class="text-xs text-gray-600">{{ user.email }}</p>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="badge {% if user.role == 'admin' %}badge-danger{% elif user.role == 'kikoba_admin' %}badge-warning{% else %}badge-info{% endif %}">
+                            {{ user.get_role_display }}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <p class="text-sm text-gray-700">{{ user.date_joined|date:"M d, Y" }}</p>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="badge {% if user.is_active %}badge-success{% else %}badge-danger{% endif %}">
+                            {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6">
+                        {% if user.phone_number_verified %}
+                        <span class="text-green-600 flex items-center text-sm">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Verified
+                        </span>
+                        {% else %}
+                        <span class="text-gray-500 text-sm">Not verified</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-12 text-center">
+                        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Users Found</h3>
+                        <p class="text-gray-600">No users match your search criteria.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+        <p class="text-sm text-gray-700">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} users
+        </p>
+        <nav class="flex items-center gap-2">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&role={{ role_filter }}" 
+               class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Previous
+            </a>
+            {% endif %}
+            
+            <span class="px-4 py-2 text-gray-700">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&role={{ role_filter }}" 
+               class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Next
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

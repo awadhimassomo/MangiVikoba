@@ -1,0 +1,97 @@
+\
+{% extends 'dashboard/base_dashboard_new.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ page_title|default:"Record Payment" }} | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-lg rounded-lg p-6 md:p-8">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6">{{ page_title|default:"Record Payment" }}</h1>
+
+        <!-- DEBUGGING INFO START -->
+        <div style="background-color: #f0f0f0; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+            <p><strong>DEBUGGING INFORMATION:</strong></p>
+            <p>Current Kikoba ID: {{ current_kikoba.id }}</p>
+            <p>Member being edited (ID): {{ member.id|default:"None (expected for new payment)" }}</p>
+            <p>Count of members for status list: {{ all_members_status|length }}</p>
+            <p>Form object passed to template: {{ form }}</p>
+            <p>Form non-field errors: {{ form.non_field_errors }}</p>
+            <p>Form field errors: {{ form.errors }}</p>
+        </div>
+        <!-- DEBUGGING INFO END -->
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-4 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if all_members_status %}
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Member Payment Status (Entry Fees)</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Due</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Paid</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for status in all_members_status %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ status.name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ status.due }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ status.paid }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if status.is_fully_paid %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Fully Paid</span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="{% url 'groups:record_entry_fee_payment' kikoba_id=current_kikoba.id member_id=status.member_id %}" class="text-indigo-600 hover:text-indigo-900">Edit Payment</a>
+                                {% if status.payment_id and not status.is_fully_paid %}
+                                | <a href="{% url 'groups:record_entry_fee_installment' payment_id=status.payment_id %}" class="text-blue-600 hover:text-blue-900">Add Installment</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            {{ form|crispy }}
+
+            <div class="mt-8 flex justify-end space-x-3">
+                <a href="{% url 'dashboard:kikoba_admin_dashboard' kikoba_id=current_kikoba.id %}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-bright-red rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bright-red">
+                    Save Payment
+                </button>
+            </div>
+        </form>
+        
+        {% if member %}
+        <div class="mt-6 text-sm text-gray-600">
+            <p><strong>Kikoba:</strong> {{ current_kikoba.name }}</p>
+            <p><strong>Member:</strong> {{ member.user.get_full_name|default:member.user.username }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

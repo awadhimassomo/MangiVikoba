@@ -1,0 +1,76 @@
+{% extends 'dashboard/super_admin/base.html' %}
+
+{% block subtitle %}Manage system-wide configuration settings{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Add/Update Configuration -->
+    <div class="card p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Add/Update Configuration</h2>
+        
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            <div>
+                <label for="key" class="block text-sm font-medium text-gray-700 mb-2">Configuration Key *</label>
+                <input type="text" id="key" name="key" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                       placeholder="e.g., max_loan_amount">
+            </div>
+            
+            <div>
+                <label for="value" class="block text-sm font-medium text-gray-700 mb-2">Value *</label>
+                <input type="text" id="value" name="value" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                       placeholder="Configuration value">
+            </div>
+            
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea id="description" name="description" rows="3"
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                          placeholder="Brief description of this configuration"></textarea>
+            </div>
+            
+            <button type="submit" class="btn-primary w-full">Save Configuration</button>
+        </form>
+    </div>
+    
+    <!-- Current Configurations -->
+    <div class="card p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Current Configurations</h2>
+        
+        <div class="space-y-3">
+            {% for config in configurations %}
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-semibold text-gray-800">{{ config.key }}</h3>
+                    <button onclick="editConfig('{{ config.key }}', '{{ config.value }}', '{{ config.description }}')"
+                            class="text-primary-main hover:text-primary-dark text-sm">
+                        Edit
+                    </button>
+                </div>
+                <p class="text-sm font-mono text-gray-700 bg-gray-50 rounded px-2 py-1 mb-2">{{ config.value }}</p>
+                {% if config.description %}
+                <p class="text-xs text-gray-600">{{ config.description }}</p>
+                {% endif %}
+                <p class="text-xs text-gray-500 mt-2">
+                    Last updated by {{ config.updated_by.name }} on {{ config.updated_at|date:"M d, Y H:i" }}
+                </p>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-8">No configurations set yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function editConfig(key, value, description) {
+    document.getElementById('key').value = key;
+    document.getElementById('value').value = value;
+    document.getElementById('description').value = description || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+{% endblock %}

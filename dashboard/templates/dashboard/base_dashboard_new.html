@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+{% load i18n %}
+<html lang="{% get_current_language as LANGUAGE_CODE %}{{ LANGUAGE_CODE }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Vikoba+ Dashboard{% endblock %}</title>
+    {% load static i18n %}
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'bright-red': '#EE4540',
+              'ruby-red': '#C72C41',
+              'burgundy': '#801336',
+              'dark-maroon': '#510A32',
+              'deep-purple': '#20142C',
+              'mangi-red': '#C72C41', // Alias for primary red
+            }
+          }
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+    <style>
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px; /* Slightly wider */
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #edf2f7; /* Lighter track */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--ruby-red, #C72C41); /* Use CSS variable for Mangi color */
+            border-radius: 10px;
+            border: 2px solid #edf2f7; /* Track color as border creates inset look */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--burgundy, #801336);
+        }
+
+        .bg-gradient-logo {
+            background: linear-gradient(135deg, var(--bright-red, #EE4540), var(--burgundy, #801336));
+        }
+
+        /* Define text-gradient using brand colors if possible, or keep simple for now */
+        .text-gradient {
+            background: linear-gradient(135deg, var(--bright-red, #EE4540), var(--burgundy, #801336));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }        /* Styles for sidebar links */
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem; /* 12px 16px */
+            font-size: 0.875rem; /* 14px */
+            font-weight: 500;
+            border-radius: 0.375rem; /* 6px */
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+            color: #d1d5db; /* gray-300 */
+        }
+        .sidebar-link:hover {
+            background-color: #EE4540; /* bright-red */
+            color: #ffffff; /* white */
+        }
+        .sidebar-link.active {
+            background-color: #C72C41; /* ruby-red */
+            color: #ffffff; /* white */
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        .sidebar-icon {
+            margin-right: 0.75rem; /* 12px */
+            width: 1.25rem; /* 20px */
+            height: 1.25rem; /* 20px */
+            flex-shrink: 0;
+        }
+
+        #contributionsDropdown {
+            /* DEBUG: Add a red border to see if the dropdown is present */
+            border: 2px solid red;
+        }
+
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+    <div class="flex min-h-screen relative">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-64 bg-gradient-to-b from-deep-purple to-dark-maroon text-white p-4 space-y-6
+                                   lg:static lg:inset-0">
+            <div class="flex items-center justify-between border-b border-white/20 pb-4">
+                <a href="{% url 'dashboard:home' %}" class="text-xl font-bold text-white flex items-center">
+                    <span class="flex-shrink-0 w-10 h-10 bg-gradient-logo rounded-full flex items-center justify-center mr-3 shadow-md">
+                        <span class="text-white font-bold text-xl">V+</span>
+                    </span>
+                    <span>Vikoba+</span>
+                </a>
+                <button id="mobile-toggle" class="text-gray-300 hover:text-white lg:hidden p-1 hidden">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <nav class="flex-1 space-y-1.5 overflow-y-auto" style="max-height: calc(100vh - 200px);">
+                <!-- Back to Main Website -->
+                <a href="/" class="sidebar-link bg-gradient-to-r from-bright-red/20 to-ruby-red/20 hover:from-bright-red/30 hover:to-ruby-red/30 border border-ruby-red/50">
+                    <i class="fas fa-home sidebar-icon"></i> Back to Home
+                </a>
+                
+                <a href="{% url 'dashboard:home' %}" class="sidebar-link {% if request.path == '/dashboard/' or request.path == '/dashboard/home/' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt sidebar-icon"></i> Dashboard
+                </a>
+
+                <!-- Kikoba Admin Modules -->
+                <a href="{% url 'dashboard:group_management' %}" class="sidebar-link module-nav-link {% if 'group-management' in request.path or request.resolver_match.url_name == 'group_management' %}active{% endif %}">
+                    <i class="fas fa-users-cog sidebar-icon"></i> Group Management
+                </a>
+                  <div>
+                    <button type="button" class="contributions-dropdown-toggle sidebar-link module-nav-link w-full text-left flex justify-between items-center cursor-pointer {% if 'contributions/' in request.path or 'savings/' in request.path or 'emergency-fund/' in request.path or 'entry-fee/' in request.path or 'share-contribution/' in request.path %}active-parent{% endif %}">
+                        <span>
+                            <i class="fas fa-piggy-bank sidebar-icon"></i> Savings & Contributions
+                        </span>
+                        <i class="contributionsDropdownIcon fas fa-chevron-down transform transition-transform duration-200"></i>
+                    </button>
+                    <div class="contributionsDropdown mt-1 space-y-1 pl-4">
+                        <a href="{% url 'dashboard:entry_fee_management' %}" class="sidebar-link text-sm {% if 'entry-fee' in request.path %}active{% endif %}">
+                            <i class="fas fa-door-open sidebar-icon text-xs"></i> Entry Fees
+                        </a>
+                        <a href="{% url 'dashboard:share_contributions_management' %}" class="sidebar-link text-sm {% if 'share-contributions/' in request.path %}active{% endif %}">
+                            <i class="fas fa-chart-pie sidebar-icon text-xs"></i> Share Contributions
+                        </a>
+                        <a href="{% url 'dashboard:savings_management' %}" class="sidebar-link text-sm {% if 'savings/' in request.path %}active{% endif %}">
+                            <i class="fas fa-wallet sidebar-icon text-xs"></i> Member Savings
+                        </a>
+                        <a href="{% url 'dashboard:emergency_fund_management' %}" class="sidebar-link text-sm {% if 'emergency-fund/' in request.path %}active{% endif %}">
+                            <i class="fas fa-ambulance sidebar-icon text-xs"></i> Emergency Fund
+                        </a>
+                         <a href="{% if current_kikoba %}{% url 'groups:kikoba_contribution_config' kikoba_id=current_kikoba.id %}{% else %}#{% endif %}" class="sidebar-link text-sm {% if 'configure-contributions' in request.path %}active{% endif %}">
+                            <i class="fas fa-cogs sidebar-icon text-xs"></i> Configure Contributions
+                        </a>
+                    </div>
+                </div>
+
+                <a href="{% url 'dashboard:kikoba_loans_management' %}" class="sidebar-link module-nav-link {% if 'loans-management' in request.path or request.resolver_match.url_name == 'kikoba_loans_management' %}active{% endif %}">
+                    <i class="fas fa-hand-holding-usd sidebar-icon"></i> Loans Management
+                </a>
+                <a href="{% url 'dashboard:credit_score_engine' %}" class="sidebar-link module-nav-link {% if 'credit-score' in request.path or request.resolver_match.url_name == 'credit_score_engine' %}active{% endif %}">
+                    <i class="fas fa-chart-line sidebar-icon"></i> Shared Credit Score
+                </a>
+                <a href="{% url 'dashboard:auditing_reporting' %}" class="sidebar-link module-nav-link {% if 'auditing-reporting' in request.path or request.resolver_match.url_name == 'auditing_reporting' %}active{% endif %}">
+                    <i class="fas fa-file-invoice sidebar-icon"></i> Auditing & Reporting
+                </a>
+                <a href="{% url 'dashboard:learning_hub' %}" class="sidebar-link module-nav-link {% if 'learning-hub' in request.path or request.resolver_match.url_name == 'learning_hub' %}active{% endif %}">
+                    <i class="fas fa-graduation-cap sidebar-icon"></i> Learning Hub
+                </a>
+                
+                <!-- Other Links -->
+                <a href="{% url 'dashboard:policy_management' %}" class="sidebar-link {% if 'policies' in request.path %}active{% endif %}">
+                    <i class="fas fa-file-alt sidebar-icon"></i> Policies
+                </a>
+                <a href="{% url 'dashboard:emergency_funds' %}" class="sidebar-link {% if 'emergency_funds' in request.path or 'emergency' in request.path %}active{% endif %}">
+                    <i class="fas fa-life-ring sidebar-icon"></i> Emergency Funds
+                </a>
+                <a href="{% url 'dashboard:profile' %}" class="sidebar-link {% if 'profile' in request.path %}active{% endif %}">
+                    <i class="fas fa-user-circle sidebar-icon"></i> Profile
+                </a>
+                
+                <div class="pt-4 mt-4 border-t border-white/20">
+                    <h5 class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Quick Links</h5>
+                    <a href="{% url 'landing:index' %}" class="sidebar-link">
+                        <i class="fas fa-globe sidebar-icon"></i> Main Site
+                    </a>
+                    <a href="{% url 'dashboard:settings' %}" class="sidebar-link {% if 'settings' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog sidebar-icon"></i> Settings
+                    </a>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-white/20 mt-auto">
+                {% if user.is_authenticated %}
+                <div class="flex items-center mb-3 pb-3 border-b border-white/10">
+                    <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white mr-3 ring-2 ring-white/30">
+                        {% if user.profile_photo %}
+                            <img src="{{ user.profile_photo.url }}" alt="{{ user.name|default:'User' }}" class="w-full h-full rounded-full object-cover">
+                        {% else %}
+                            <i class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-white">
+                            {{ user.name|default:'User' }}
+                            {% if user.is_authenticated and user.verification_status == 'verified' %}
+                                <i class="fas fa-star text-yellow-400 ml-1" title="Verified User"></i>
+                            {% endif %}
+                        </p>
+                        <p class="text-xs text-gray-300">{{ user.email|default:"No email set" }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'logout' %}" class="sidebar-link text-red-300 hover:bg-red-700/50 hover:text-red-100">
+                    <i class="fas fa-sign-out-alt sidebar-icon"></i> Logout
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}" class="sidebar-link text-gray-300 hover:bg-gray-700/50 hover:text-white">
+                    <i class="fas fa-sign-in-alt sidebar-icon"></i> Login
+                </a>
+                {% endif %}
+            </div>
+        </aside>
+
+        <!-- Mobile Menu Button (visible on small screens) -->
+        <button id="mobile-menu-button" class="lg:hidden fixed top-4 left-4 z-40 p-2 bg-gray-800 text-white rounded-md shadow-lg">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white shadow-md p-4">
+                <div class="flex justify-between items-center">
+                    <div class="lg:hidden">
+                        <!-- This div is a placeholder to balance the flex layout when mobile menu button is on the left -->
+                        <!-- Or you can remove the mobile-menu-button from here if it's fixed positioned -->
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-semibold text-gray-700">{% block page_title %}Dashboard Overview{% endblock %}</h1>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-gray-600 hidden sm:inline">Welcome, {{ user.name|default:'User' }}!</span>
+                        <button id="fullscreen-toggle" class="text-gray-600 hover:text-ruby-red p-1" title="Toggle Fullscreen">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                        <!-- Add any other header elements here -->
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto" id="main-content-area">
+                {% block dashboard_content %}
+                <!-- Content for specific dashboard pages will go here -->
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+
+    {% block extra_js %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('DOM fully loaded and parsed.'); // Log when DOM is ready
+
+            const sidebar = document.getElementById('sidebar');
+            const mobileToggle = document.getElementById('mobile-toggle'); // Button inside sidebar for closing
+            const mobileMenuButton = document.getElementById('mobile-menu-button'); // Hamburger button
+
+            // Function to open sidebar
+            function openSidebar() {
+                sidebar.classList.remove('hidden');
+                sidebar.classList.add('fixed', 'inset-y-0', 'left-0', 'z-30', 'w-64'); // Ensure it's visible and positioned
+            }
+
+            // Function to close sidebar
+            function closeSidebar() {
+                sidebar.classList.add('hidden');
+                sidebar.classList.remove('fixed', 'inset-y-0', 'left-0', 'z-30', 'w-64');
+            }
+
+            // Toggle sidebar with hamburger button
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    if (sidebar.classList.contains('hidden')) {
+                        openSidebar();
+                    } else {
+                        closeSidebar();
+                    }
+                });
+            }
+
+            // Close sidebar with the 'X' button inside the sidebar
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', function () {
+                    closeSidebar();
+                });
+            }
+
+            // Close sidebar if clicking outside of it on mobile
+            document.addEventListener('click', function (event) {
+                if (window.innerWidth < 1024) { // Only on mobile
+                    const isClickInsideSidebar = sidebar.contains(event.target);
+                    const isClickOnMenuButton = mobileMenuButton ? mobileMenuButton.contains(event.target) : false;
+                    if (!isClickInsideSidebar && !isClickOnMenuButton && !sidebar.classList.contains('hidden')) {
+                        closeSidebar();
+                    }
+                }
+            });
+
+            // Fullscreen toggle
+            const fullscreenToggle = document.getElementById('fullscreen-toggle');
+            const mainContentArea = document.documentElement; // or specific element like document.getElementById('main-content-area')
+            if (fullscreenToggle) {
+                fullscreenToggle.addEventListener('click', () => {
+                    if (!document.fullscreenElement) {
+                        mainContentArea.requestFullscreen().catch(err => {
+                            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                        });
+                        fullscreenToggle.innerHTML = '<i class="fas fa-compress"></i>';
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                            fullscreenToggle.innerHTML = '<i class="fas fa-expand"></i>';
+                        }
+                    }
+                });
+            }
+            // Dropdown toggle using class selectors for robustness
+            document.querySelectorAll('.contributions-dropdown-toggle').forEach(function(toggle) {
+                const dropdown = toggle.parentElement.querySelector('.contributionsDropdown');
+                const icon = toggle.querySelector('.contributionsDropdownIcon');
+                if (dropdown && icon) {
+                    toggle.addEventListener('click', function() {
+                        dropdown.classList.toggle('hidden');
+                        icon.classList.toggle('fa-chevron-down');
+                        icon.classList.toggle('fa-chevron-up');
+                    });
+                    // Auto expand if child is active
+                    if (toggle.classList.contains('active-parent') && dropdown.classList.contains('hidden')) {
+                        dropdown.classList.remove('hidden');
+                        icon.classList.remove('fa-chevron-down');
+                        icon.classList.add('fa-chevron-up');
+                    }
+                }
+            });
+            
+            // Hide sidebar by default on small screens, show on larger screens
+            if (window.innerWidth < 1024) {
+                closeSidebar();
+            } else {
+                sidebar.classList.remove('hidden'); // Ensure it's shown on larger screens
+            }
+            window.addEventListener('resize', () => {
+                if (window.innerWidth < 1024) {
+                    if (!sidebar.classList.contains('fixed')) { // if it's not already handled by manual toggle
+                        closeSidebar();
+                    }
+                } else {
+                    openSidebar(); // Or rather, ensure it's static and visible
+                    sidebar.classList.remove('hidden', 'fixed', 'inset-y-0', 'left-0', 'z-30', 'w-64');
+                }
+            });
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>

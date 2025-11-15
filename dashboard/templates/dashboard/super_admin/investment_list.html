@@ -1,0 +1,170 @@
+{% extends 'dashboard/super_admin/base.html' %}
+
+{% block subtitle %}Manage investment opportunities across the platform{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'dashboard:super_admin:investment_create' %}" class="btn-primary">
+    + Create New Investment
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card p-6 mb-6">
+    <form method="get" class="flex flex-wrap gap-4">
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                <option value="">All Statuses</option>
+                {% for value, label in statuses %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <select name="type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                <option value="">All Types</option>
+                {% for value, label in investment_types %}
+                <option value="{{ value }}" {% if investment_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="flex items-end">
+            <button type="submit" class="btn-primary">Apply Filters</button>
+        </div>
+        
+        <div class="flex items-end">
+            <a href="{% url 'dashboard:super_admin:investment_list' %}" class="btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Investment Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    {% for investment in page_obj %}
+    <div class="card p-6 hover:shadow-xl transition-all">
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-4">
+            <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                    <h3 class="text-xl font-bold text-gray-800">{{ investment.title }}</h3>
+                    <span class="badge {% if investment.status == 'active' %}badge-success{% elif investment.status == 'draft' %}badge-warning{% elif investment.status == 'completed' %}badge-info{% else %}badge-danger{% endif %}">
+                        {{ investment.get_status_display }}
+                    </span>
+                </div>
+                <p class="text-sm text-gray-600">{{ investment.description|truncatewords:20 }}</p>
+            </div>
+        </div>
+        
+        <!-- Image -->
+        {% if investment.image %}
+        <div class="mb-4 rounded-lg overflow-hidden">
+            <img src="{{ investment.image.url }}" alt="{{ investment.title }}" class="w-full h-48 object-cover">
+        </div>
+        {% endif %}
+        
+        <!-- Details Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-4 py-4 border-t border-b border-gray-200">
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Investment Type</p>
+                <p class="font-semibold text-gray-800">{{ investment.get_investment_type_display }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Risk Level</p>
+                <p class="font-semibold {% if investment.risk_level == 'low' %}text-green-600{% elif investment.risk_level == 'medium' %}text-yellow-600{% else %}text-red-600{% endif %}">
+                    {{ investment.get_risk_level_display }}
+                </p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Target Amount</p>
+                <p class="font-semibold text-gray-800">{{ investment.target_amount|floatformat:0 }} TZS</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Expected Return</p>
+                <p class="font-semibold text-green-600">{{ investment.expected_return_rate }}% p.a.</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Duration</p>
+                <p class="font-semibold text-gray-800">{{ investment.duration_months }} months</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-600 mb-1">Location</p>
+                <p class="font-semibold text-gray-800">{{ investment.location|default:"N/A" }}</p>
+            </div>
+        </div>
+        
+        <!-- Progress -->
+        <div class="mb-4">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-700">Funding Progress</span>
+                <span class="text-sm font-bold text-primary-dark">{{ investment.progress_percentage|floatformat:1 }}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+                <div class="bg-gradient-to-r from-primary-main to-accent-main h-3 rounded-full transition-all duration-500" style="width: {{ investment.progress_percentage }}%"></div>
+            </div>
+            <div class="flex justify-between mt-2">
+                <span class="text-xs text-gray-600">{{ investment.current_amount|floatformat:0 }} TZS raised</span>
+                <span class="text-xs text-gray-600">{{ investment.target_amount|floatformat:0 }} TZS target</span>
+            </div>
+        </div>
+        
+        <!-- Timeline -->
+        <div class="flex justify-between items-center text-sm text-gray-600 mb-4">
+            <div>
+                <span class="font-medium">Start:</span> {{ investment.start_date }}
+            </div>
+            <div>
+                <span class="font-medium">End:</span> {{ investment.end_date }}
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="flex gap-2">
+            <a href="{% url 'dashboard:super_admin:investment_detail' investment.id %}" class="flex-1 text-center btn-secondary py-2">
+                View Details
+            </a>
+            <a href="{% url 'dashboard:super_admin:investment_edit' investment.id %}" class="flex-1 text-center btn-primary py-2">
+                Edit
+            </a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-span-2 card p-12 text-center">
+        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+        </svg>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Investments Found</h3>
+        <p class="text-gray-600 mb-6">Create your first investment opportunity to get started!</p>
+        <a href="{% url 'dashboard:super_admin:investment_create' %}" class="btn-primary inline-block">
+            + Create Investment
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="mt-8 flex justify-center">
+    <nav class="flex items-center gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&type={{ investment_type }}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            Previous
+        </a>
+        {% endif %}
+        
+        <span class="px-4 py-2 text-gray-700">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+        
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&type={{ investment_type }}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+            Next
+        </a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}

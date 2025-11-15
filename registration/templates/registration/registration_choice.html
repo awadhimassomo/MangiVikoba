@@ -1,0 +1,11 @@
+{% extends 'landing/base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Register</h2>
+  <div class="row">
+    <div class="col-md-6 mb-3">
+      <a href="{% url 'registration:unified_register' %}" class="btn btn-primary btn-block btn-lg">Register a Kikoba or as a Member</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,510 @@
+{% extends 'dashboard/super_admin/base.html' %}
+{% load static %}
+
+{% block extra_styles %}
+<style>
+    /* Base styles */
+    body {
+        @apply bg-surface text-ink;
+    }
+    
+    /* Form container */
+    .form-container {
+        @apply max-w-4xl mx-auto bg-white rounded-xl shadow-md overflow-hidden mb-8;
+    }
+    
+    /* Progress bar */
+    .progress-container {
+        @apply w-full bg-gray-200 rounded-full h-2.5 mb-8;
+    }
+    
+    .progress {
+        @apply bg-primary-main h-2.5 rounded-full transition-all duration-300;
+    }
+    
+    /* Form steps */
+    .form-step {
+        @apply p-8;
+        display: none;
+    }
+    
+    .form-step.active {
+        display: block;
+    }
+    
+    /* Form sections */
+    .form-section {
+        @apply mb-8 pb-6 border-b border-gray-100;
+    }
+    
+    .form-section:last-child {
+        @apply border-0 mb-0 pb-0;
+    }
+    
+    /* Form headings */
+    .form-heading {
+        @apply text-xl font-bold text-primary-dark mb-6;
+    }
+    
+    /* Form groups */
+    .form-group {
+        @apply mb-6;
+    }
+    
+    .form-group label {
+        @apply block text-sm font-medium text-gray-700 mb-2;
+    }
+    
+    .form-group label.required:after {
+        @apply text-red-500 ml-1;
+        content: '*';
+    }
+    
+    /* Form controls */
+    .form-control {
+        @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent transition duration-200;
+    }
+    
+    textarea.form-control {
+        @apply min-h-[100px];
+    }
+    
+    /* Tag input */
+    .tag-input {
+        @apply flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg min-h-[50px] items-center;
+    }
+    
+    .tag {
+        @apply bg-primary-main text-white px-3 py-1 rounded-full text-sm flex items-center;
+    }
+    
+    .tag-remove {
+        @apply ml-2 cursor-pointer hover:text-red-100;
+    }
+    
+    /* Radio and checkbox groups */
+    .option-group {
+        @apply flex flex-wrap gap-4 mt-2;
+    }
+    
+    .option-label {
+        @apply flex items-center cursor-pointer;
+    }
+    
+    .option-label input[type="radio"],
+    .option-label input[type="checkbox"] {
+        @apply mr-2 text-primary-main focus:ring-primary-main;
+    }
+    
+    /* Risk slider */
+    .risk-slider {
+        @apply w-full my-4;
+    }
+    
+    .risk-labels {
+        @apply flex justify-between text-sm text-gray-500;
+    }
+    
+    /* Buttons */
+    .btn {
+        @apply px-6 py-2 rounded-lg font-medium transition duration-200;
+    }
+    
+    .btn-primary {
+        @apply bg-primary-main text-white hover:bg-primary-dark;
+    }
+    
+    .btn-outline {
+        @apply border border-gray-300 text-gray-700 hover:bg-gray-50;
+    }
+    
+    .btn-container {
+        @apply flex justify-between mt-8 pt-6 border-t border-gray-100;
+    }
+    
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .form-grid {
+            @apply grid grid-cols-2 gap-6;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="p-6 bg-primary-dark text-white">
+        <h1 class="text-2xl font-bold">Create New Investment Opportunity</h1>
+        <p class="text-primary-light">Fill out this form to create a new investment opportunity for your members</p>
+    </div>
+    
+    <div class="p-6">
+        <div class="progress-container">
+            <div class="progress" id="progress" style="width: 20%;"></div>
+        </div>
+        
+        <form id="investmentForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Step 1: Basic Information -->
+            <div class="form-step active" id="step1">
+                <div class="form-section">
+                    <h2 class="form-heading">Basic Information</h2>
+                    
+                    <div class="form-group">
+                        <label for="title" class="required">Investment Title</label>
+                        <input type="text" id="title" name="title" class="form-control" required 
+                               placeholder="e.g., Vanguard S&P 500 ETF, Tanzania Treasury Bond">
+                        <p class="text-sm text-gray-500 mt-1">A clear, descriptive name for the investment</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="investment_type" class="required">Investment Type</label>
+                        <select id="investment_type" name="investment_type" class="form-control" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="stock">Stocks</option>
+                            <option value="bond-corporate">Bonds (Corporate)</option>
+                            <option value="bond-government">Bonds (Government/Municipal)</option>
+                            <option value="utt-bond">UTT Bond</option>
+                            <option value="real-estate">Real Estate</option>
+                            <option value="reit">REITs</option>
+                            <option value="mutual-fund">Mutual Funds</option>
+                            <option value="etf">ETFs</option>
+                            <option value="crypto">Cryptocurrency</option>
+                            <option value="commodity">Commodities</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="tickerField" style="display: none;">
+                        <label for="ticker_symbol">Ticker Symbol</label>
+                        <input type="text" id="ticker_symbol" name="ticker_symbol" class="form-control" 
+                               placeholder="e.g., AAPL, VOO">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="required">Core Objective</label>
+                        <div class="option-group">
+                            <label class="option-label">
+                                <input type="radio" name="objective" value="growth" required>
+                                <span>Growth</span>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="objective" value="income">
+                                <span>Income</span>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="objective" value="safety">
+                                <span>Safety</span>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="objective" value="inflation">
+                                <span>Inflation Hedge</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="btn-container">
+                    <div></div>
+                    <button type="button" class="btn btn-primary btn-next" data-next="step2">Next: Financial Details</button>
+                </div>
+            </div>
+            
+            <!-- Step 2: Financial Details -->
+            <div class="form-step" id="step2">
+                <div class="form-section">
+                    <h2 class="form-heading">Financial Details</h2>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="current_price" class="required">Current Price / Unit Cost (TZS)</label>
+                            <input type="number" id="current_price" name="current_price" class="form-control" step="0.01" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="min_investment" class="required">Minimum Investment (TZS)</label>
+                            <input type="number" id="min_investment" name="min_investment" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="expected_return" class="required">Expected Return (%)</label>
+                            <input type="number" id="expected_return" name="expected_return" class="form-control" step="0.01" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="time_horizon" class="required">Time Horizon</label>
+                            <select id="time_horizon" name="time_horizon" class="form-control" required>
+                                <option value="">-- Select --</option>
+                                <option value="short">Short-Term (< 3 years)</option>
+                                <option value="medium">Medium-Term (3-10 years)</option>
+                                <option value="long">Long-Term (10+ years)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="key_metrics">Key Metrics</label>
+                        <div class="tag-input" id="metricsContainer">
+                            <input type="text" id="metricsInput" class="flex-grow border-0 focus:ring-0" placeholder="e.g., P/E Ratio: 25, Yield: 4.5%">
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">Press Enter to add each metric</p>
+                        <input type="hidden" name="key_metrics" id="key_metrics">
+                    </div>
+                </div>
+                
+                <div class="btn-container">
+                    <button type="button" class="btn btn-outline btn-prev" data-prev="step1">Previous</button>
+                    <button type="button" class="btn btn-primary btn-next" data-next="step3">Next: Risk & Analysis</button>
+                </div>
+            </div>
+            
+            <!-- Step 3: Risk & Analysis -->
+            <div class="form-step" id="step3">
+                <div class="form-section">
+                    <h2 class="form-heading">Risk & Analysis</h2>
+                    
+                    <div class="form-group">
+                        <label for="risk_level" class="required">Risk Level</label>
+                        <input type="range" id="risk_level" name="risk_level" min="1" max="5" value="3" class="w-full risk-slider">
+                        <div class="risk-labels">
+                            <span>1 (Low Risk)</span>
+                            <span>2</span>
+                            <span>3 (Moderate)</span>
+                            <span>4</span>
+                            <span>5 (High Risk)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="strengths" class="required">Key Strengths</label>
+                        <div class="tag-input" id="strengthsContainer">
+                            <input type="text" id="strengthsInput" class="flex-grow border-0 focus:ring-0" placeholder="Add a strength">
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">List 3-4 key advantages. Press Enter after each one.</p>
+                        <input type="hidden" name="strengths" id="strengths">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="risks" class="required">Key Risks</label>
+                        <div class="tag-input" id="risksContainer">
+                            <input type="text" id="risksInput" class="flex-grow border-0 focus:ring-0" placeholder="Add a risk">
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1">List 3-4 potential drawbacks. Press Enter after each one.</p>
+                        <input type="hidden" name="risks" id="risks">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="investment_thesis" class="required">Investment Thesis</label>
+                        <textarea id="investment_thesis" name="investment_thesis" class="form-control" required
+                                  placeholder="Explain why this is a good investment opportunity"></textarea>
+                    </div>
+                </div>
+                
+                <div class="btn-container">
+                    <button type="button" class="btn btn-outline btn-prev" data-prev="step2">Previous</button>
+                    <button type="button" class="btn btn-primary btn-next" data-next="step4">Next: Additional Details</button>
+                </div>
+            </div>
+            
+            <!-- Step 4: Additional Details -->
+            <div class="form-step" id="step4">
+                <div class="form-section">
+                    <h2 class="form-heading">Additional Details</h2>
+                    
+                    <div class="form-group">
+                        <label for="description" class="required">Detailed Description</label>
+                        <textarea id="description" name="description" class="form-control" required
+                                  placeholder="Provide a detailed description of the investment opportunity"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="image">Featured Image</label>
+                        <input type="file" id="image" name="image" class="form-control" accept="image/*">
+                        <p class="text-sm text-gray-500 mt-1">Recommended size: 800x450px</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="documents">Supporting Documents</label>
+                        <input type="file" id="documents" name="documents" class="form-control" multiple>
+                        <p class="text-sm text-gray-500 mt-1">Upload prospectus, reports, or other relevant documents (PDF, DOC, XLS)</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="source_url">Source / Reference Link</label>
+                        <input type="url" id="source_url" name="source_url" class="form-control" 
+                               placeholder="https://...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expiry_date">Offer Expiry Date (if applicable)</label>
+                        <input type="date" id="expiry_date" name="expiry_date" class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="internal_notes">Internal Notes</label>
+                        <textarea id="internal_notes" name="internal_notes" class="form-control"
+                                  placeholder="Any internal notes about this investment opportunity"></textarea>
+                    </div>
+                </div>
+                
+                <div class="btn-container">
+                    <button type="button" class="btn btn-outline btn-prev" data-prev="step3">Previous</button>
+                    <button type="submit" class="btn btn-primary">Create Investment Opportunity</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form navigation
+        document.querySelectorAll('.btn-next').forEach(button => {
+            button.addEventListener('click', function(e) {
+                if (e.target.type === 'submit') return;
+                
+                const currentStep = this.closest('.form-step');
+                const nextStepId = this.getAttribute('data-next');
+                
+                // Validate current step before proceeding
+                if (validateStep(currentStep.id)) {
+                    currentStep.classList.remove('active');
+                    document.getElementById(nextStepId).classList.add('active');
+                    updateProgressBar(nextStepId);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.btn-prev').forEach(button => {
+            button.addEventListener('click', function() {
+                const currentStep = this.closest('.form-step');
+                const prevStepId = this.getAttribute('data-prev');
+                
+                currentStep.classList.remove('active');
+                document.getElementById(prevStepId).classList.add('active');
+                updateProgressBar(prevStepId);
+            });
+        });
+        
+        // Update progress bar
+        function updateProgressBar(stepId) {
+            const steps = {
+                'step1': 25,
+                'step2': 50,
+                'step3': 75,
+                'step4': 100
+            };
+            
+            document.getElementById('progress').style.width = steps[stepId] + '%';
+        }
+        
+        // Form validation
+        function validateStep(stepId) {
+            const step = document.getElementById(stepId);
+            const requiredFields = step.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add('border-red-500');
+                    isValid = false;
+                } else {
+                    field.classList.remove('border-red-500');
+                }
+            });
+            
+            if (!isValid) {
+                alert('Please fill in all required fields before proceeding.');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Toggle ticker symbol field based on investment type
+        document.getElementById('investment_type').addEventListener('change', function() {
+            const tickerField = document.getElementById('tickerField');
+            const showTickerTypes = ['stock', 'etf', 'mutual-fund', 'reit'];
+            
+            if (showTickerTypes.includes(this.value)) {
+                tickerField.style.display = 'block';
+            } else {
+                tickerField.style.display = 'none';
+                document.getElementById('ticker_symbol').value = '';
+            }
+        });
+        
+        // Tag input functionality
+        function setupTagInput(inputId, containerId, hiddenInputId) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(containerId);
+            const hiddenInput = document.getElementById(hiddenInputId);
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const tagText = this.value.trim();
+                    if (tagText) {
+                        addTag(tagText, container, hiddenInput);
+                        this.value = '';
+                    }
+                }
+            });
+        }
+        
+        function addTag(text, container, hiddenInput) {
+            const tag = document.createElement('div');
+            tag.className = 'tag';
+            tag.innerHTML = `
+                ${text}
+                <span class="tag-remove">×</span>
+            `;
+            
+            // Insert before the input
+            container.insertBefore(tag, container.querySelector('input'));
+            
+            // Update hidden input
+            updateHiddenTags(container, hiddenInput);
+            
+            // Remove tag functionality
+            tag.querySelector('.tag-remove').addEventListener('click', function() {
+                container.removeChild(tag);
+                updateHiddenTags(container, hiddenInput);
+            });
+        }
+        
+        function updateHiddenTags(container, hiddenInput) {
+            const tags = Array.from(container.querySelectorAll('.tag'))
+                .map(tag => tag.childNodes[0].textContent.trim());
+            hiddenInput.value = JSON.stringify(tags);
+        }
+        
+        // Initialize tag inputs
+        setupTagInput('strengthsInput', 'strengthsContainer', 'strengths');
+        setupTagInput('risksInput', 'risksContainer', 'risks');
+        setupTagInput('metricsInput', 'metricsContainer', 'key_metrics');
+        
+        // Form submission
+        document.getElementById('investmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate all steps before submission
+            let allValid = true;
+            document.querySelectorAll('.form-step').forEach(step => {
+                if (!validateStep(step.id)) {
+                    allValid = false;
+                }
+            });
+            
+            if (allValid) {
+                // If using AJAX, you would submit the form data here
+                // For now, we'll just submit the form normally
+                this.submit();
+            }
+        });
+    });
+</script>
+{% endblock %}

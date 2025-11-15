@@ -1,0 +1,655 @@
+/* Brand colors for Mangi Kikoba - following Mangi.store design language */
+:root {
+    /* Primary Mangi color palette */
+    --bright-red: #EE4540;
+    --ruby-red: #C72C41;
+    --burgundy: #801336;
+    --dark-maroon: #510A32;
+    --deep-purple: #20142C;
+    --deep-purple-rgb: 32, 20, 44; /* Ensured RGB for deep-purple for text shadow */
+    --primary-color-rgb: 199, 44, 65; /* Added for form focus boxShadow */
+    --danger-color-rgb: 211, 47, 47; /* Added for error state boxShadow */
+    
+    /* Functional colors */
+    --primary-color: var(--ruby-red);
+    --secondary-color: var(--bright-red);
+    --accent-color: var(--burgundy);
+    --dark-color: var(--deep-purple);
+    --light-color: #ECEFF1;
+    --danger-color: #D32F2F;
+    --success-color: #388E3C;
+    --text-color: #263238;
+    --text-light: #FFFFFF;
+    --background-light: #F5F5F5;
+    --card-bg: #FFFFFF;
+}
+
+body {
+    font-family: 'Inter', 'Poppins', sans-serif;
+    color: var(--text-color);
+    line-height: 1.6;
+    /* background-color: var(--background-light); */ /* Default background */
+}
+
+/* Ensure html and body take full height for pages like login */
+html, body {
+    height: 100%;
+}
+
+/* Override body background for login page if needed, or use a specific class */
+body.login-page-background {
+    background-color: var(--background-light) !important; 
+}
+
+/* Clean, minimal layout with ample whitespace */
+.container {
+    padding: 1.5rem 1rem;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+p {
+    font-weight: 400;
+    margin-bottom: 1rem;
+}
+
+.text-muted {
+    color: #607D8B !important;
+    font-weight: 300;
+}
+
+/* Navigation - AGGRESSIVE DEBUGGING */
+.navbar {
+    background: linear-gradient(135deg, var(--bright-red) 0%, var(--burgundy) 50%, var(--deep-purple) 100%) !important; /* Mangi gradient background */
+    position: sticky !important; /* Keep it at the top */
+    top: 0;
+    z-index: 9999 !important;
+    width: 100%;
+    padding: 10px !important; /* Keep some padding for visibility */
+    /* border: 3px solid red !important; */ /* Removed debug border */
+    /* box-shadow: none; */ /* Original */
+    /* position: absolute; */ /* Original */
+}
+
+.navbar-brand,
+.navbar-brand span,
+.nav-link {
+    color: var(--text-light) !important; /* Intended light text */
+    text-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5), 0px 0px 10px rgba(var(--deep-purple-rgb), 0.5); /* Restored branded text shadow */
+    /* background-color: yellow !important; */ /* Removed debug background */
+    /* border: 1px solid green !important; */ /* Removed debug border */
+    /* padding: 5px !important; */ /* Removed debug padding */
+    /* margin: 2px !important; */ /* Removed debug margin */
+    display: inline-block !important; /* Ensure they take up space */
+    opacity: 1 !important;
+    visibility: visible !important;
+    font-weight: bold !important; /* Keep bold for now */
+}
+
+/* Ensure the container for the links is also visible */
+.navbar-collapse {
+    display: block !important; /* Or flex, but block should show something */
+    /* background-color: pink !important; */ /* Removed debug background */
+    /* padding: 5px; */ /* Removed debug padding */
+    /* border: 1px dashed purple; */ /* Removed debug border */
+}
+
+ul.navbar-nav {
+    /* background-color: orange !important; */ /* Removed debug background */
+    display: flex !important; /* Ensure it tries to lay out its items */
+    /* padding: 5px; */ /* Removed debug padding */
+    /* border: 1px dashed blue; */ /* Removed debug border */
+}
+
+/* Commenting out original text color for general nav-link for debug */
+/*
+.nav-link {
+    font-weight: 500;
+    color: var(--text-light); 
+    transition: all 0.3s;
+}
+*/
+
+.nav-link:hover {
+    color: darkred !important; /* Different hover for debug */
+    background-color: lightyellow !important;
+}
+
+/* Buttons - consistent style */
+.btn {
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.6rem 1.8rem;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.9rem;
+}
+
+.btn-lg {
+    padding: 0.8rem 2.5rem;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+    border: none;
+    box-shadow: 0 4px 12px rgba(201, 44, 65, 0.2);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--burgundy), var(--dark-maroon));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(201, 44, 65, 0.3);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Hero section with Mangi gradient */
+.hero-section {
+    background: linear-gradient(135deg, var(--bright-red) 0%, var(--burgundy) 50%, var(--deep-purple) 100%);
+    color: var(--text-light);
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, rgba(238, 69, 64, 0.1) 10%, transparent 70%);
+    z-index: 1;
+}
+
+.hero-section .container {
+    position: relative;
+    z-index: 2;
+}
+
+.hero-content h1 {
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    font-size: 3.5rem; /* Increased font size */
+}
+
+.hero-content p {
+    font-size: 1.1rem; /* Adjusted font size */
+    margin-bottom: 2rem;
+    opacity: 0.9;
+    max-width: 550px; /* Added max-width for better readability */
+}
+
+.hero-image {
+    max-width: 450px; /* Control image size */
+    margin-top: 2rem; /* Add some top margin */
+}
+
+/* Smaller hero section for inner pages */
+.hero-section-small {
+    background: linear-gradient(135deg, var(--bright-red) 0%, var(--burgundy) 50%, var(--deep-purple) 100%);
+    color: var(--text-light);
+    padding: 60px 0;
+    text-align: center;
+}
+
+.hero-section-small h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.hero-section-small p {
+    font-size: 1.1rem;
+    opacity: 0.8;
+    margin-bottom: 0;
+}
+
+/* Cards and boxes - clean with shadow */
+.feature-box, .card, .testimonial-box, .training-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: none;
+    overflow: hidden;
+}
+
+.feature-box:hover, .card:hover, .training-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    height: 80px;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
+    background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+    border-radius: 50%;
+    box-shadow: 0 10px 20px rgba(128, 19, 54, 0.3);
+    transition: transform 0.3s ease;
+}
+
+.feature-box:hover .feature-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* CTA section with Mangi gradient */
+.cta-section {
+    background: linear-gradient(135deg, var(--burgundy) 0%, var(--dark-maroon) 100%);
+    color: var(--text-light);
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-section::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(238, 69, 64, 0.1) 0%, transparent 60%);
+    transform: rotate(-15deg);
+}
+
+.cta-section .container {
+    position: relative;
+    z-index: 2;
+}
+
+.cta-section h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+}
+
+.cta-section p {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+/* Footer */
+.footer-section {
+    background: linear-gradient(to bottom, var(--ruby-red) 0%, var(--ruby-red) 25%, var(--burgundy) 70%, var(--deep-purple) 100%);
+    color: var(--text-light);
+    padding: 60px 0 30px;
+    font-size: 0.9rem;
+}
+
+.footer-logo {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2rem; /* Increased size */
+    font-weight: bold;
+    color: #ffffff; /* Mangi part in white */
+    margin-bottom: 1rem;
+}
+
+.footer-logo span {
+    display: none; /* Hide the span if the logo is just MANGI */
+}
+
+.footer-section .contact-info p,
+.footer-section .contact-info a {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 0.5rem;
+}
+
+.footer-section .contact-info a:hover {
+    color: var(--bright-red);
+}
+
+.footer-heading {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-light);
+}
+
+.footer-link {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-link:hover {
+    color: var(--text-light);
+}
+
+.footer-links li {
+    margin-bottom: 0.5rem;
+}
+
+.social-icons .social-icon {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    transition: color 0.3s ease;
+}
+
+.social-icons .social-icon:hover {
+    color: var(--bright-red);
+}
+
+.newsletter-form .form-control {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: var(--text-light);
+}
+
+.newsletter-form .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.footer-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Logout Page Styles */
+.logout-page {
+    min-height: 100vh;
+    background-color: var(--background-light);
+}
+
+.text-gradient {
+    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Form styling enhancements */
+.form-label {
+    font-weight: 600;
+    color: var(--dark-color); /* Darker label for better contrast */
+    margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db; /* Slightly lighter gray for a softer look */
+    padding: 0.75rem 1rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
+    font-size: 0.95rem;
+    background-color: #f9fafb; /* Very light off-white background for inputs */
+}
+
+/* Navbar Toggler Styles */
+.navbar-toggler {
+    padding: 0.5rem 0.75rem; /* Added padding */
+    background: linear-gradient(135deg, var(--bright-red) 0%, var(--burgundy) 100%); /* Mangi gradient background */
+    border: none; /* Remove default border */
+    border-radius: 8px; /* Consistent border-radius */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); /* Subtle shadow */
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--primary-color-rgb), 0.5); /* Focus shadow consistent with buttons */
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important; /* White icon */
+    opacity: 1 !important; /* Ensure full opacity */
+}
+
+/* Ensure toggler is visible when navbar collapses - for debugging if needed */
+/*
+@media (max-width: 991.98px) { 
+    .navbar-toggler {
+        display: block !important; 
+        border: 2px solid lime !important; 
+    }
+}
+*/
+
+/* Card Header Styling */
+.card-header {
+    background: linear-gradient(135deg, var(--bright-red) 0%, var(--burgundy) 70%, var(--deep-purple) 100%);
+    color: var(--text-light) !important; /* Ensure text is white */
+    border-bottom: none; /* Remove default Bootstrap border if not desired with gradient */
+    padding: 0.75rem 1.25rem; /* Adjust padding as needed */
+}
+
+.card-header h1,
+.card-header h2,
+.card-header h3,
+.card-header h4,
+.card-header h5,
+.card-header h6,
+.card-header .h1,
+.card-header .h2,
+.card-header .h3,
+.card-header .h4,
+.card-header .h5,
+.card-header .h6 {
+    color: var(--text-light) !important; /* Ensure headings within card-header are also white */
+    margin-bottom: 0; /* Adjust or remove if spacing is handled by card-body */
+}
+
+/* Registration Page Specific Styles */
+.register-page {
+    background-color: var(--background-light); /* Light grey background */
+    min-height: 100vh; /* Ensure it takes full viewport height */
+}
+
+/* Consolidated Navbar Styles for Pages with White Background */
+body.login-page-background .navbar,
+body.logout-page .navbar,
+body.register-page .navbar {
+    position: relative !important;
+    background-color: white !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    /* Ensure sticky is overridden if it was applied globally */
+    top: auto; 
+    z-index: auto; 
+}
+
+body.login-page-background .navbar-brand,
+body.login-page-background .navbar-brand span,
+body.login-page-background .nav-link,
+body.logout-page .navbar-brand,
+body.logout-page .navbar-brand span,
+body.logout-page .nav-link,
+body.register-page .navbar-brand,
+body.register-page .navbar-brand span,
+body.register-page .nav-link {
+    color: var(--text-light) !important; /* Changed to white text */
+    text-shadow: none !important;
+    background-color: transparent !important;
+    border: none !important;
+}
+
+body.login-page-background .navbar-toggler-icon,
+body.logout-page .navbar-toggler-icon,
+body.register-page .navbar-toggler-icon {
+    filter: none !important; /* Default toggler for light background (no invert) */
+}
+/* End Consolidated Navbar Styles */
+
+
+.registration-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: var(--card-bg);
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+.registration-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.registration-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--dark-color);
+}
+
+.registration-header p {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Form styles specific to registration */
+.form-label {
+    font-weight: 600;
+    color: var(--dark-color); /* Darker label for better contrast */
+    margin-bottom: 0.5rem;
+}
+
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #d1d5db; /* Slightly lighter gray for a softer look */
+    padding: 0.75rem 1rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.15s ease-in-out;
+    font-size: 0.95rem;
+    background-color: #f9fafb; /* Very light off-white background for inputs */
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(var(--primary-color-rgb), 0.25);
+    background-color: #ffffff; /* White background on focus */
+    outline: none;
+}
+
+/* Floating labels adjustments */
+.form-floating {
+    margin-bottom: 1rem;
+}
+
+.form-floating .form-control {
+    padding-top: 1.5rem;
+    padding-bottom: 0.75rem;
+}
+
+.form-floating .form-label {
+    padding: 0 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus ~ .form-label,
+.form-control:not(:placeholder-shown) ~ .form-label,
+.form-select:focus ~ .form-label,
+.form-select:not(:placeholder-shown) ~ .form-label {
+    transform: translateY(-0.8rem) translateX(0.15rem) scale(0.85);
+    color: var(--primary-color);
+    background-color: white;
+    padding: 0 0.5rem;
+}
+
+/* Checkbox and radio adjustments */
+.form-check {
+    margin-bottom: 1rem;
+}
+
+.form-check-input {
+    border-radius: 0.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.form-check-label {
+    font-weight: 500;
+}
+
+/* Help text */
+.form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Form Validation Styles */
+.invalid-feedback {
+    color: var(--danger-color) !important;
+    font-weight: 500; /* Slightly bolder for emphasis */
+    font-size: 0.875em;
+}
+
+.form-control.is-invalid,
+.was-validated .form-control:invalid,
+.form-select.is-invalid,
+.was-validated .form-select:invalid {
+    border-color: var(--danger-color) !important;
+    background-image: none; /* Override Bootstrap's default error icon if not desired, or customize if needed */
+}
+
+.form-control.is-invalid:focus,
+.was-validated .form-control:invalid:focus,
+.form-select.is-invalid:focus,
+.was-validated .form-select:invalid:focus {
+    border-color: var(--danger-color) !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--danger-color-rgb), 0.25); /* Use danger color RGB for shadow */
+}
+/* End Form Validation Styles */
+
+/* Buttons within the form */
+.btn-primary {
+    background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+    border: none;
+    box-shadow: 0 4px 12px rgba(201, 44, 65, 0.2);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--burgundy), var(--dark-maroon));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(201, 44, 65, 0.3);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, var(--secondary-color), var(--ruby-red));
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem 0.75rem;
+    }
+    
+    h1 {
+        font-size: 2.25rem;
+    }
+    
+    h2 {
+        font-size: 1.75rem;
+    }
+}

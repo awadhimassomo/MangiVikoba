@@ -1,0 +1,447 @@
+{
+  "info": {
+    "name": "MangiVikoba API",
+    "description": "Complete REST API collection for MangiVikoba mobile app",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://192.168.1.197:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"0712345678\",\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"password_confirm\": \"SecurePassword123!\",\n  \"role\": \"member\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/",
+              "host": ["{{base_url}}"],
+              "path": ["users", ""]
+            }
+          }
+        },
+        {
+          "name": "Login (Get Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.collectionVariables.set(\"access_token\", jsonData.access);",
+                  "pm.collectionVariables.set(\"refresh_token\", jsonData.refresh);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"0712345678\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/token/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "token", ""]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/token/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "token", "refresh", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/me/",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me", ""]
+            }
+          }
+        },
+        {
+          "name": "Get User's Vikoba",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/my_vikoba/",
+              "host": ["{{base_url}}"],
+              "path": ["users", "my_vikoba", ""]
+            }
+          }
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/",
+              "host": ["{{base_url}}"],
+              "path": ["users", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vikoba",
+      "item": [
+        {
+          "name": "List Vikoba",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vikoba/",
+              "host": ["{{base_url}}"],
+              "path": ["vikoba", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Kikoba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Test Kikoba\",\n  \"description\": \"A test kikoba\",\n  \"contribution_frequency\": \"monthly\",\n  \"interest_rate\": \"5.00\",\n  \"loan_limit_factor\": \"3.00\",\n  \"loan_term_days\": 90,\n  \"late_payment_penalty\": \"1.00\",\n  \"is_center_kikoba\": true,\n  \"location\": \"Dar es Salaam\",\n  \"estimated_members\": \"11-20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/vikoba/",
+              "host": ["{{base_url}}"],
+              "path": ["vikoba", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Kikoba Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vikoba/:id/",
+              "host": ["{{base_url}}"],
+              "path": ["vikoba", ":id", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Kikoba Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vikoba/:id/members/",
+              "host": ["{{base_url}}"],
+              "path": ["vikoba", ":id", "members", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Kikoba Balance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vikoba/:id/balance/",
+              "host": ["{{base_url}}"],
+              "path": ["vikoba", ":id", "balance", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Join Kikoba",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vikoba/:id/join/",
+              "host": ["{{base_url}}"],
+              "path": ["vikoba", ":id", "join", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Savings",
+      "item": [
+        {
+          "name": "List Savings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/savings/",
+              "host": ["{{base_url}}"],
+              "path": ["savings", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Saving",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"group\": 1,\n  \"member\": 1,\n  \"amount\": \"50000.00\",\n  \"transaction_reference\": \"MPESA123456\",\n  \"notes\": \"Monthly savings\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/savings/",
+              "host": ["{{base_url}}"],
+              "path": ["savings", ""]
+            }
+          }
+        },
+        {
+          "name": "Confirm Saving",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/savings/:id/confirm/",
+              "host": ["{{base_url}}"],
+              "path": ["savings", ":id", "confirm", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Loans",
+      "item": [
+        {
+          "name": "List Loan Applications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/loan-applications/",
+              "host": ["{{base_url}}"],
+              "path": ["loan-applications", ""]
+            }
+          }
+        },
+        {
+          "name": "Apply for Loan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kikoba\": 1,\n  \"loan_product\": 1,\n  \"requested_amount\": \"100000.00\",\n  \"purpose\": \"Business expansion\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/loan-applications/",
+              "host": ["{{base_url}}"],
+              "path": ["loan-applications", ""]
+            }
+          }
+        },
+        {
+          "name": "Approve Loan Application",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/loan-applications/:id/approve/",
+              "host": ["{{base_url}}"],
+              "path": ["loan-applications", ":id", "approve", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Loans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/loans/",
+              "host": ["{{base_url}}"],
+              "path": ["loans", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", ""]
+            }
+          }
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/:id/mark_read/",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", ":id", "mark_read", ""],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/notifications/mark_all_read/",
+              "host": ["{{base_url}}"],
+              "path": ["notifications", "mark_all_read", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

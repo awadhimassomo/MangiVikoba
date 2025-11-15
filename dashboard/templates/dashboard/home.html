@@ -1,0 +1,612 @@
+{% extends 'landing/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | MangiVikoba+{% endblock %}
+
+{% block extra_head %}
+    <style>
+        :root {
+            --mangi-red: #C72C41;
+            --mangi-bright-red: #EE4540;
+            --mangi-burgundy: #801336;
+            --mangi-dark-maroon: #510A32;
+            --mangi-deep-purple: #20142C;
+            --gradient-mangi: linear-gradient(135deg, #C72C41 0%, #510A32 100%);
+            --light-bg: #F8F9FA;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            color: var(--mangi-deep-purple);
+            line-height: 1.6;
+        }
+        
+        /* Navigation */
+        .navbar {
+            background: var(--gradient-mangi);
+            padding: 1rem 0;
+            box-shadow: 0 2px 15px rgba(199, 44, 65, 0.3);
+        }
+        
+        .navbar-brand {
+            color: white;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .navbar-brand span {
+            color: #FFD700;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+        }
+        
+        .nav-link.active {
+            color: white !important;
+            font-weight: 600;
+        }
+        
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: white;
+            border-radius: 2px;
+        }
+        
+        .btn-login {
+            background: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            margin-right: 10px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-login:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-register {
+            background: white;
+            color: var(--mangi-red);
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-register:hover {
+            background: var(--mangi-bright-red);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(199, 44, 65, 0.3);
+        }
+        
+        /* Hero Section */
+        .training-hero {
+            padding: 5rem 0 3rem;
+            text-align: center;
+            background: var(--gradient-mangi);
+            color: white;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .training-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M1200 120L0 16.48 0 0 1200 0 1200 120z" fill="%23510A32"/></svg>') bottom/100% no-repeat;
+        }
+        
+        .training-hero .container {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .training-hero h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+        
+        .training-hero p {
+            font-size: 1.25rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            opacity: 0.95;
+        }
+        
+        .hero-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Categories Section */
+        .categories-section {
+            padding: 2rem 0 5rem;
+        }
+        
+        .section-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: var(--mangi-burgundy);
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--gradient-mangi);
+            border-radius: 2px;
+        }
+        
+        .category-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            height: 100%;
+            transition: all 0.4s;
+            border: none;
+            box-shadow: 0 5px 20px rgba(128, 19, 54, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient-mangi);
+        }
+        
+        .category-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(128, 19, 54, 0.2);
+        }
+        
+        .category-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--gradient-mangi);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 2rem;
+            box-shadow: 0 5px 15px rgba(199, 44, 65, 0.3);
+        }
+        
+        .category-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--mangi-burgundy);
+        }
+        
+        .category-description {
+            margin-bottom: 1.5rem;
+            color: var(--mangi-deep-purple);
+            opacity: 0.8;
+        }
+        
+        .btn-category {
+            background: var(--gradient-mangi);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.8rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            box-shadow: 0 4px 10px rgba(199, 44, 65, 0.3);
+        }
+        
+        .btn-category:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(199, 44, 65, 0.4);
+            color: white;
+        }
+        
+        /* Stats Section */
+        .stats-section {
+            background: var(--mangi-deep-purple);
+            color: white;
+            padding: 4rem 0;
+            margin: 4rem 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--mangi-bright-red);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        /* Testimonial Section */
+        .testimonial-section {
+            background: var(--mangi-burgundy);
+            color: white;
+            padding: 4rem 0;
+        }
+        
+        .testimonial-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            height: 100%;
+        }
+        
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1.5rem;
+        }
+        
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+        }
+        
+        .author-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gradient-mangi);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            background: var(--gradient-mangi);
+            color: white;
+            padding: 5rem 0;
+            text-align: center;
+            margin-top: 4rem;
+        }
+        
+        .cta-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-description {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+            opacity: 0.9;
+        }
+        
+        .btn-cta {
+            background: white;
+            color: var(--mangi-red);
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-cta:hover {
+            background: var(--mangi-bright-red);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Footer */
+        .footer {
+            background: var(--mangi-deep-purple);
+            color: white;
+            padding: 4rem 0 2rem;
+        }
+        
+        .footer h5 {
+            color: var(--mangi-bright-red);
+            margin-bottom: 1.5rem;
+        }
+        
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+        
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--mangi-bright-red);
+        }
+        
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .social-icon:hover {
+            background: var(--mangi-bright-red);
+            transform: translateY(-3px);
+        }
+        
+        .copyright {
+            text-align: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .training-hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .training-hero p {
+                font-size: 1.1rem;
+            }
+            
+            .section-title {
+                font-size: 1.8rem;
+            }
+            
+            .category-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .stat-number {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Training Hero Section -->
+    <section class="training-hero">
+        <div class="container">
+            <div class="hero-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1>Mangi Vikoba+ Training Center</h1>
+            <p>Improve your financial literacy and learn how to effectively manage your savings group with our comprehensive resources designed for women leaders.</p>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories-section">
+        <div class="container">
+            <h2 class="section-title">Learning Categories</h2>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3 class="category-title">Group Management</h3>
+                        <p class="category-description">Learn how to effectively manage your savings group members, set up meetings, and establish group rules that work for women.</p>
+                        <a href="#" class="btn btn-category">Explore Resources</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-hand-holding-usd"></i>
+                        </div>
+                        <h3 class="category-title">Contributions & Savings</h3>
+                        <p class="category-description">Master the techniques for tracking contributions, managing savings, and ensuring financial discipline in your group.</p>
+                        <a href="#" class="btn btn-category">Explore Resources</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                        </div>
+                        <h3 class="category-title">Loan Management</h3>
+                        <p class="category-description">Understand the process of granting loans, setting fair interest rates, and tracking repayments effectively.</p>
+                        <a href="#" class="btn btn-category">Explore Resources</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <h3 class="category-title">Profit Distribution</h3>
+                        <p class="category-description">Learn transparent methods for calculating and distributing profits among group members fairly.</p>
+                        <a href="#" class="btn btn-category">Explore Resources</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3 class="category-title">Financial Literacy</h3>
+                        <p class="category-description">Build your financial knowledge with courses on budgeting, saving, and personal finance management.</p>
+                        <a href="#" class="btn btn-category">Explore Resources</a>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 class="category-title">App Tutorials</h3>
+                        <p class="category-description">Step-by-step guides on using Mangi Vikoba+ features to manage your savings group digitally.</p>
+                        <a href="#" class="btn btn-category">Explore Resources</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 col-6">
+                    <div class="stat-item">
+                        <div class="stat-number">5,000+</div>
+                        <div class="stat-label">Women Trained</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-item">
+                        <div class="stat-number">85%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-item">
+                        <div class="stat-number">200+</div>
+                        <div class="stat-label">Vikoba Groups</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="stat-item">
+                        <div class="stat-number">98%</div>
+                        <div class="stat-label">Satisfaction</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonial Section -->
+    <section class="testimonial-section">
+        <div class="container">
+            <h2 class="section-title text-center mb-5">What Women Are Saying</h2>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">"The training resources helped me transform our village savings group. We're more organized and profitable than ever!"</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">A</div>
+                            <div>
+                                <h5>Anna M.</h5>
+                                <p>Group Leader, Arusha</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">"I never understood profit distribution until I took these courses. Now I can explain it clearly to all my members."</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">S</div>
+                            <div>
+                                <h5>Sarah J.</h5>
+                                <p>Treasurer, Dodoma</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="testimonial-card">
+                        <p class="testimonial-text">"The mobile app tutorials made it so easy to transition from paper records to digital management. Life-changing!"</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">M</div>
+                            <div>
+                                <h5>Mary K.</h5>
+                                <p>Secretary, Mwanza</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Ready to Transform Your Vikoba?</h2>
+            <p class="cta-description">Join thousands of women who have already improved their financial literacy and group management skills with Mangi Vikoba+ Training Center.</p>
+            <button class="btn btn-cta">Start Learning Today</button>
+        </div>
+    </section>
+{% endblock %}

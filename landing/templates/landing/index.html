@@ -1,0 +1,718 @@
+{% extends 'landing/base.html' %}
+{% load static %}
+
+{% block title %}MangiVikoba+ | Empowering Community Savings Groups{% endblock %}
+
+{% block extra_head %}
+    <style>
+        :root {
+            --mangi-red: #C72C41;
+            --mangi-bright-red: #EE4540;
+            --mangi-burgundy: #801336;
+            --mangi-dark-maroon: #510A32;
+            --mangi-deep-purple: #20142C;
+            --gradient-mangi: linear-gradient(135deg, #C72C41 0%, #510A32 100%);
+            --light-bg: #fefefe;
+            --card-bg: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: var(--light-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Modern Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1.2rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-scrolled {
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.8rem;
+            background: var(--gradient-mangi);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            color: var(--text-primary) !important;
+            margin: 0 1rem;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--mangi-red) !important;
+        }
+
+        .nav-link.active {
+            color: var(--mangi-red) !important;
+            font-weight: 600;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--gradient-mangi);
+            border-radius: 2px;
+        }
+
+        .btn-download-nav {
+            background: var(--gradient-mangi);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.8rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(199, 44, 65, 0.3);
+        }
+
+        .btn-download-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(199, 44, 65, 0.4);
+        }
+
+        /* Hero Section */
+        .training-hero {
+            padding: 12rem 0 6rem;
+            background: linear-gradient(135deg, #fefefe 0%, #f8f9fa 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            background: var(--gradient-mangi);
+            clip-path: polygon(20% 0, 100% 0, 100% 100%, 0% 100%);
+            opacity: 0.03;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(199, 44, 65, 0.1);
+            color: var(--mangi-red);
+            padding: 0.5rem 1.2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(199, 44, 65, 0.2);
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--mangi-burgundy) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dynamic-text-container {
+            display: inline-block;
+            position: relative;
+            height: 80px;
+            overflow: hidden;
+        }
+
+        .dynamic-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--gradient-mangi);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .dynamic-text.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .typing-container {
+            display: inline-block;
+            position: relative;
+        }
+
+        .typing-text {
+            background: var(--gradient-mangi);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            border-right: 3px solid var(--mangi-red);
+            padding-right: 5px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { border-color: var(--mangi-red); }
+            51%, 100% { border-color: transparent; }
+        }
+
+        .hero-description {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            max-width: 600px;
+        }
+
+        /* Modern Cards */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        .category-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-mangi);
+        }
+
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-icon {
+            width: 70px;
+            height: 70px;
+            background: var(--gradient-mangi);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        .category-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .category-description {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        /* Modern Buttons */
+        .btn-modern {
+            background: var(--gradient-mangi);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 20px rgba(199, 44, 65, 0.3);
+        }
+
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(199, 44, 65, 0.4);
+            color: white;
+        }
+
+        .btn-outline-modern {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline-modern:hover {
+            border-color: var(--mangi-red);
+            color: var(--mangi-red);
+            transform: translateY(-2px);
+        }
+
+        /* App Download Section */
+        .app-section {
+            background: var(--gradient-mangi);
+            color: white;
+            padding: 6rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .app-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .download-btn {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.2rem 2rem;
+            border-radius: 16px;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .download-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+            color: white;
+        }
+
+        .download-btn i {
+            font-size: 2.2rem;
+        }
+
+        .download-info {
+            text-align: left;
+        }
+
+        .download-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .download-platform {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            padding: 6rem 0;
+            background: var(--light-bg);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: var(--gradient-mangi);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Modern Footer */
+        .footer {
+            background: var(--mangi-deep-purple);
+            color: white;
+            padding: 4rem 0 2rem;
+        }
+
+        .footer h5 {
+            color: var(--mangi-bright-red);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--mangi-bright-red);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .dynamic-text-container {
+                height: 60px;
+            }
+            
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .download-btn {
+                min-width: 250px;
+                justify-content: center;
+            }
+            
+            .navbar-collapse {
+                background: white;
+                padding: 1rem;
+                border-radius: 12px;
+                margin-top: 1rem;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <!-- Modern Hero Section -->
+    <section class="training-hero">
+        <div class="hero-bg"></div>
+        <div class="container">
+            <div class="hero-content fade-in">
+                <span class="hero-badge">
+                    <i class="fas fa-star me-2"></i>Empowering 
+                    <span class="typing-container">
+                        <span class="typing-text" id="typing-text"></span>
+                    </span>
+                </span>
+                <h1 class="hero-title">
+                    Master Your Vikoba<br>
+                    <span style="display: block; margin-top: 0.5rem;">
+                        One Member at a Time
+                    </span>
+                </h1>
+                <p class="hero-description">
+                    Transform your community savings group with our comprehensive training platform. 
+                    Learn, manage, and grow with confidence using modern digital tools.
+                </p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="#" class="btn-modern">
+                        <i class="fas fa-play-circle me-2"></i>Start Learning
+                    </a>
+                    <a href="#" class="btn-outline-modern">
+                        <i class="fas fa-video me-2"></i>Watch Demo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modern Categories Grid -->
+    <section class="container" style="padding: 6rem 0;">
+        <div class="text-center mb-5 fade-in">
+            <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem;">Learning Paths</h2>
+            <p style="font-size: 1.2rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">
+                Choose your learning journey with our structured training modules
+            </p>
+        </div>
+
+        <div class="category-grid">
+            <div class="category-card fade-in">
+                <div class="category-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="category-title">Group Leadership</h3>
+                <p class="category-description">
+                    Master group dynamics, conflict resolution, and effective leadership strategies for all community members.
+                </p>
+                <a href="#" class="btn-modern" style="padding: 0.8rem 1.5rem;">
+                    Explore Modules
+                </a>
+            </div>
+
+            <div class="category-card fade-in">
+                <div class="category-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="category-title">Financial Management</h3>
+                <p class="category-description">
+                    Learn budgeting, cash flow management, and financial reporting for sustainable group growth.
+                </p>
+                <a href="#" class="btn-modern" style="padding: 0.8rem 1.5rem;">
+                    Explore Modules
+                </a>
+            </div>
+
+            <div class="category-card fade-in">
+                <div class="category-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3 class="category-title">Digital Tools</h3>
+                <p class="category-description">
+                    Master the MangiVikoba+ app for seamless group management, from contributions to profit sharing.
+                </p>
+                <a href="#" class="btn-modern" style="padding: 0.8rem 1.5rem;">
+                    Explore Modules
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modern App Download Section -->
+    <section class="app-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="app-content fade-in">
+                        <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem;">
+                            Manage On The Go
+                        </h2>
+                        <p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 2rem;">
+                            Download our mobile app and take control of your Vikoba group from anywhere, anytime.
+                        </p>
+                        <div class="download-buttons">
+                            <a href="#" class="download-btn">
+                                <i class="fab fa-google-play"></i>
+                                <div class="download-info">
+                                    <div class="download-label">GET IT ON</div>
+                                    <div class="download-platform">Google Play</div>
+                                </div>
+                            </a>
+                            <a href="#" class="download-btn">
+                                <i class="fab fa-apple"></i>
+                                <div class="download-info">
+                                    <div class="download-label">Download on the</div>
+                                    <div class="download-platform">App Store</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modern Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="stat-grid">
+                <div class="stat-item fade-in">
+                    <div class="stat-number">5K+</div>
+                    <div class="stat-label">Members Empowered</div>
+                </div>
+                <div class="stat-item fade-in">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                <div class="stat-item fade-in">
+                    <div class="stat-number">200+</div>
+                    <div class="stat-label">Active Groups</div>
+                </div>
+                <div class="stat-item fade-in">
+                    <div class="stat-number">50K+</div>
+                    <div class="stat-label">App Downloads</div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}
+
+{% block extra_scripts %}
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('navbar-scrolled');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+            }
+        });
+
+        // Fade in animation on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('fade-in');
+                }
+            });
+        });
+
+        document.querySelectorAll('.fade-in').forEach((el) => {
+            observer.observe(el);
+        });
+
+        // Typing effect for sequential phrases
+        class SequentialTypingEffect {
+            constructor(element, texts, typingSpeed = 100, pauseTime = 2000) {
+                this.element = element;
+                this.texts = texts;
+                this.typingSpeed = typingSpeed;
+                this.pauseTime = pauseTime;
+                this.textIndex = 0;
+                this.charIndex = 0;
+                this.isDeleting = false;
+                this.init();
+            }
+
+            init() {
+                setTimeout(() => this.type(), 1000);
+            }
+
+            type() {
+                const currentText = this.texts[this.textIndex];
+                
+                if (this.isDeleting) {
+                    // Deleting text
+                    this.element.textContent = currentText.substring(0, this.charIndex - 1);
+                    this.charIndex--;
+                } else {
+                    // Typing text
+                    this.element.textContent = currentText.substring(0, this.charIndex + 1);
+                    this.charIndex++;
+                }
+
+                if (!this.isDeleting && this.charIndex === currentText.length) {
+                    // Finished typing, pause then start deleting
+                    this.isDeleting = true;
+                    setTimeout(() => this.type(), this.pauseTime);
+                } else if (this.isDeleting && this.charIndex === 0) {
+                    // Finished deleting, move to next text
+                    this.isDeleting = false;
+                    this.textIndex = (this.textIndex + 1) % this.texts.length;
+                    setTimeout(() => this.type(), 500);
+                } else {
+                    // Continue typing or deleting
+                    const speed = this.isDeleting ? this.typingSpeed / 2 : this.typingSpeed;
+                    setTimeout(() => this.type(), speed);
+                }
+            }
+        }
+
+        // Initialize effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sequential typing effect for badge
+            const typingTexts = [
+                'Every Woman',
+                'Every Man', 
+                'Every Youth',
+                'Every Community'
+            ];
+            const typingElement = document.getElementById('typing-text');
+            new SequentialTypingEffect(typingElement, typingTexts, 100, 2000);
+        });
+    </script>
+{% endblock %}

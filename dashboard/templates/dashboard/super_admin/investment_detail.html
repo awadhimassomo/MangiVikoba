@@ -1,0 +1,234 @@
+{% extends 'dashboard/super_admin/base.html' %}
+
+{% block subtitle %}Detailed information about {{ investment.title }}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'dashboard:super_admin:investment_edit' investment.id %}" class="btn-primary">
+    Edit Investment
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Investment Details Card -->
+        <div class="card p-6">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ investment.title }}</h2>
+                    <div class="flex items-center gap-3">
+                        <span class="badge {% if investment.status == 'active' %}badge-success{% elif investment.status == 'draft' %}badge-warning{% elif investment.status == 'completed' %}badge-info{% else %}badge-danger{% endif %}">
+                            {{ investment.get_status_display }}
+                        </span>
+                        <span class="badge badge-info">{{ investment.get_investment_type_display }}</span>
+                        <span class="badge {% if investment.risk_level == 'low' %}badge-success{% elif investment.risk_level == 'medium' %}badge-warning{% else %}badge-danger{% endif %}">
+                            {{ investment.get_risk_level_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if investment.image %}
+            <div class="mb-6 rounded-lg overflow-hidden">
+                <img src="{{ investment.image.url }}" alt="{{ investment.title }}" class="w-full h-64 object-cover">
+            </div>
+            {% endif %}
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">Description</h3>
+                <p class="text-gray-700 leading-relaxed">{{ investment.description }}</p>
+            </div>
+            
+            <!-- Financial Details -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Target Amount</p>
+                    <p class="text-xl font-bold text-primary-dark">{{ investment.target_amount|floatformat:0 }}</p>
+                    <p class="text-xs text-gray-500">TZS</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Current Amount</p>
+                    <p class="text-xl font-bold text-green-600">{{ investment.current_amount|floatformat:0 }}</p>
+                    <p class="text-xs text-gray-500">TZS</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Expected Return</p>
+                    <p class="text-xl font-bold text-blue-600">{{ investment.expected_return_rate }}%</p>
+                    <p class="text-xs text-gray-500">Per Annum</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Min. Investment</p>
+                    <p class="text-xl font-bold text-gray-800">{{ investment.minimum_amount|floatformat:0 }}</p>
+                    <p class="text-xs text-gray-500">TZS</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Max. Investment</p>
+                    <p class="text-xl font-bold text-gray-800">{{ investment.maximum_amount|default:"No Limit"|floatformat:0 }}</p>
+                    <p class="text-xs text-gray-500">{% if investment.maximum_amount %}TZS{% endif %}</p>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <p class="text-sm text-gray-600 mb-1">Duration</p>
+                    <p class="text-xl font-bold text-gray-800">{{ investment.duration_months }}</p>
+                    <p class="text-xs text-gray-500">Months</p>
+                </div>
+            </div>
+            
+            <!-- Progress Bar -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">Funding Progress</h3>
+                    <span class="text-2xl font-bold text-primary-dark">{{ investment.progress_percentage|floatformat:1 }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-gradient-to-r from-primary-main to-accent-main h-4 rounded-full transition-all duration-500" style="width: {{ investment.progress_percentage }}%"></div>
+                </div>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <p class="text-sm text-blue-700 mb-1">Start Date</p>
+                    <p class="text-lg font-semibold text-blue-900">{{ investment.start_date }}</p>
+                </div>
+                <div class="bg-red-50 rounded-lg p-4">
+                    <p class="text-sm text-red-700 mb-1">End Date</p>
+                    <p class="text-lg font-semibold text-red-900">{{ investment.end_date }}</p>
+                </div>
+            </div>
+            
+            {% if investment.location %}
+            <div class="mt-4 flex items-center text-gray-700">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                <span>{{ investment.location }}</span>
+            </div>
+            {% endif %}
+            
+            {% if investment.documents %}
+            <div class="mt-4">
+                <a href="{{ investment.documents.url }}" target="_blank" class="inline-flex items-center text-primary-main hover:text-primary-dark font-medium">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Download Investment Documents
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Participations -->
+        <div class="card p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Vikoba Participations</h2>
+            
+            {% if participations %}
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Kikoba</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Amount Invested</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Returns</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for participation in participations %}
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="py-3 px-4">
+                                <div>
+                                    <p class="font-semibold text-gray-800">{{ participation.kikoba.name }}</p>
+                                    <p class="text-sm text-gray-600">{{ participation.kikoba.kikoba_number }}</p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4 font-semibold text-gray-800">{{ participation.amount_invested|floatformat:0 }} TZS</td>
+                            <td class="py-3 px-4 font-semibold text-green-600">{{ participation.returns_received|floatformat:0 }} TZS</td>
+                            <td class="py-3 px-4">
+                                <span class="badge {% if participation.status == 'active' %}badge-success{% elif participation.status == 'pending' %}badge-warning{% else %}badge-info{% endif %}">
+                                    {{ participation.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-gray-600">{{ participation.invested_at|date:"M d, Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">No vikoba have participated in this investment yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <!-- Statistics -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Statistics</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                    <span class="text-gray-600">Total Participations</span>
+                    <span class="font-bold text-primary-dark">{{ total_participations }}</span>
+                </div>
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                    <span class="text-gray-600">Total Invested</span>
+                    <span class="font-bold text-green-600">{{ total_invested|floatformat:0 }} TZS</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Total Returns</span>
+                    <span class="font-bold text-blue-600">{{ total_returns|floatformat:0 }} TZS</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Availability -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Availability</h3>
+            {% if investment.available_to_all_vikoba %}
+            <div class="flex items-center text-green-600">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span class="font-medium">Available to all Vikoba</span>
+            </div>
+            {% else %}
+            <div class="mb-3">
+                <p class="text-sm text-gray-600 mb-2">Available to {{ investment.specific_vikoba.count }} specific Vikoba:</p>
+                <div class="space-y-2">
+                    {% for kikoba in investment.specific_vikoba.all %}
+                    <div class="text-sm bg-gray-50 rounded px-3 py-2">
+                        {{ kikoba.name }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Creator Info -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Created By</h3>
+            {% if investment.created_by %}
+            <div class="flex items-center">
+                <div class="bg-accent-main rounded-full h-12 w-12 flex items-center justify-center text-primary-dark font-bold mr-3">
+                    {{ investment.created_by.name|slice:":1"|upper }}
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-800">{{ investment.created_by.name }}</p>
+                    <p class="text-sm text-gray-600">{{ investment.created_by.phone_number }}</p>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-600">
+                <p>Created: {{ investment.created_at|date:"M d, Y H:i" }}</p>
+                <p>Updated: {{ investment.updated_at|date:"M d, Y H:i" }}</p>
+            </div>
+            {% else %}
+            <p class="text-gray-500">No creator information</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'dashboard/base_dashboard_new.html' %}
+
+{% block title %}Policy Management - {{ current_kikoba.name }} - Mangi Vikoba+{% endblock %}
+
+{% block page_title %}Policy Management for {{ current_kikoba.name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <h2 class="text-3xl font-bold mb-6 text-gray-800">Add New Policy Link</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="p-4 mb-4 text-sm rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-blue-100 text-blue-700{% endif %}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" class="bg-white shadow-md rounded-lg px-8 pt-6 pb-8 mb-4">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="id_title">
+                Title
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <p class="text-red-500 text-xs italic">{{ form.title.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="id_url">
+                URL
+            </label>
+            {{ form.url }}
+            {% if form.url.errors %}
+                <p class="text-red-500 text-xs italic">{{ form.url.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="id_description">
+                Description (Optional)
+            </label>
+            {{ form.description }}
+            {% if form.description.errors %}
+                <p class="text-red-500 text-xs italic">{{ form.description.errors|join:", " }}</p>
+            {% endif %}
+        </div>
+
+        <div class="flex items-center justify-between">
+            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                Add Policy Link
+            </button>
+        </div>
+    </form>
+
+    <hr class="my-8">
+
+    <h3 class="text-2xl font-bold mb-6 text-gray-800">Existing Policy Links</h3>
+    {% if policy_links %}
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Title
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            URL
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Added On
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for link in policy_links %}
+                        <tr>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <p class="text-gray-900 whitespace-no-wrap">{{ link.title }}</p>
+                                {% if link.description %}
+                                    <p class="text-gray-600 whitespace-no-wrap text-xs">{{ link.description }}</p>
+                                {% endif %}
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <a href="{{ link.url }}" target="_blank" class="text-blue-500 hover:text-blue-800">{{ link.url }}</a>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                <p class="text-gray-900 whitespace-no-wrap">{{ link.created_at|date:"Y-m-d H:i" }}</p>
+                            </td>
+                            <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                                {# Add edit/delete buttons here if needed in the future #}
+                                <a href="#" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                <a href="#" class="text-red-600 hover:text-red-900">Delete</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-gray-600">No policy links added yet for this Kikoba.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "dashboard/base_dashboard_new.html" %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Savings & Contributions" }} - {{ current_kikoba.name }}{% endblock %}
+
+{% block page_title %}{{ page_title|default:"Savings & Contributions" }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-xl rounded-lg p-6">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-2">Manage Savings & Contributions for {{ current_kikoba.name }}</h2>
+        <p class="text-gray-600 mb-6">Record and track member contributions for shares, savings, entry fees, and emergency funds.</p>
+
+        <!-- Form for adding a new contribution -->
+        <form method="POST" action="{% url 'dashboard:savings_contributions' %}" class="mb-8 p-4 border border-gray-200 rounded-md bg-gray-50">
+            {% csrf_token %}
+            <h3 class="text-xl font-medium text-gray-700 mb-4">Record New Contribution</h3>
+            
+            {% if contribution_form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">Error!</strong>
+                    <span class="block sm:inline">{{ contribution_form.non_field_errors|join:", " }}</span>
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label for="id_member" class="block text-sm font-medium text-gray-700 mb-1">Member</label>
+                    <select id="id_member" name="member" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm">
+                        <option value="">Select Member</option>
+                        {% for member_item in members %}
+                            <option value="{{ member_item.user.id }}" {% if contribution_form.member.value == member_item.user.id|stringformat:"s" %}selected{% endif %}>{{ member_item.user.name }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if contribution_form.member.errors %}
+                        {% for error in contribution_form.member.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="id_contribution_type" class="block text-sm font-medium text-gray-700 mb-1">Contribution Type</label>
+                    <select id="id_contribution_type" name="contribution_type" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm">
+                        <option value="">Select Type</option>
+                        <option value="shares" {% if contribution_form.contribution_type.value == "shares" %}selected{% endif %}>Shares</option>
+                        <option value="savings" {% if contribution_form.contribution_type.value == "savings" %}selected{% endif %}>Savings</option>
+                        <option value="entry_fee" {% if contribution_form.contribution_type.value == "entry_fee" %}selected{% endif %}>Entry Fee</option>
+                        <option value="emergency_fund" {% if contribution_form.contribution_type.value == "emergency_fund" %}selected{% endif %}>Emergency Fund</option>
+                        <option value="other" {% if contribution_form.contribution_type.value == "other" %}selected{% endif %}>Other</option>
+                    </select>
+                    {% if contribution_form.contribution_type.errors %}
+                        {% for error in contribution_form.contribution_type.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="id_amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input type="number" id="id_amount" name="amount" value="{{ contribution_form.amount.value|default_if_none:'' }}" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm" placeholder="e.g., 5000">
+                    {% if contribution_form.amount.errors %}
+                        {% for error in contribution_form.amount.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div>
+                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2.5 px-4 rounded-lg shadow hover:shadow-md transition-all duration-150">
+                        <i class="fas fa-check-circle mr-2"></i>Record Contribution
+                    </button>
+                </div>
+            </div>
+             <div class="mt-4">
+                <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
+                <textarea id="id_description" name="description" rows="2" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm" placeholder="Optional: Add a brief description or reference for this contribution">{{ contribution_form.description.value|default_if_none:'' }}</textarea>
+                {% if contribution_form.description.errors %}
+                    {% for error in contribution_form.description.errors %}
+                        <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </form>
+
+        <h3 class="text-xl font-medium text-gray-700 mb-4">Contribution History</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Member</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {# Loop through contributions here when data is available #}
+                    <tr>
+                        <td colspan="6" class="py-6 px-4 text-center text-sm text-gray-500">No contributions recorded yet.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

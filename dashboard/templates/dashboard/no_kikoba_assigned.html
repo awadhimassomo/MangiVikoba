@@ -1,0 +1,37 @@
+\
+{% extends "landing/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Kikoba Assignment Pending{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0">Kikoba Assignment Pending</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="lead">Your user role is recognized, but you are not currently assigned to an active Kikoba, or your membership is pending activation.</p>
+                    {% endif %}
+                    <p>If you believe this is an error, please contact your Kikoba administrator or site support.</p>
+                    <hr>
+                    <a href="{% url 'landing:index' %}" class="btn btn-primary">Go to Homepage</a>
+                    {% if user.role == 'member' %}
+                         <a href="#" class="btn btn-info">Find a Kikoba to Join (Placeholder)</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,124 @@
+{% extends 'dashboard/super_admin/base.html' %}
+
+{% block subtitle %}Manage all vikoba groups in the system{% endblock %}
+
+{% block content %}
+<!-- Search and Filters -->
+<div class="card p-6 mb-6">
+    <form method="get" class="flex flex-wrap gap-4">
+        <div class="flex-1 min-w-[250px]">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+            <input type="text" name="search" value="{{ search_query }}"
+                   placeholder="Search by name, number, or location..."
+                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+        </div>
+        
+        <div class="w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                <option value="">All</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        
+        <div class="flex items-end gap-2">
+            <button type="submit" class="btn-primary">Search</button>
+            <a href="{% url 'dashboard:super_admin:vikoba_management' %}" class="btn-secondary">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Vikoba List -->
+<div class="card">
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Kikoba Info</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Location</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Members</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Created</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Status</th>
+                    <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for kikoba in page_obj %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="py-4 px-6">
+                        <div>
+                            <p class="font-semibold text-gray-800">{{ kikoba.name }}</p>
+                            <p class="text-sm text-gray-600">{{ kikoba.kikoba_number }}</p>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <p class="text-sm text-gray-700">{{ kikoba.location|default:"Not specified" }}</p>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center">
+                            <svg class="w-4 h-4 text-gray-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                            <span class="font-semibold text-gray-800">{{ kikoba.member_count }}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <p class="text-sm text-gray-700">{{ kikoba.created_at|date:"M d, Y" }}</p>
+                    </td>
+                    <td class="py-4 px-6">
+                        <span class="badge {% if kikoba.is_active %}badge-success{% else %}badge-danger{% endif %}">
+                            {% if kikoba.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td class="py-4 px-6">
+                        <a href="{% url 'dashboard:super_admin:vikoba_detail' kikoba.id %}" 
+                           class="text-primary-main hover:text-primary-dark font-medium text-sm">
+                            View Details →
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-12 text-center">
+                        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-700 mb-2">No Vikoba Found</h3>
+                        <p class="text-gray-600">No vikoba match your search criteria.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+        <p class="text-sm text-gray-700">
+            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} vikoba
+        </p>
+        <nav class="flex items-center gap-2">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&status={{ status_filter }}" 
+               class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Previous
+            </a>
+            {% endif %}
+            
+            <span class="px-4 py-2 text-gray-700">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+            
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&status={{ status_filter }}" 
+               class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                Next
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

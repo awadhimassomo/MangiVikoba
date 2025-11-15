@@ -1,0 +1,34 @@
+{% extends "landing/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Access Denied{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">Access Denied</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="lead">You do not have the necessary administrative permissions to access this Kikoba dashboard.</p>
+                    {% endif %}
+                    <p>If you believe this is an error, please ensure you are logged in with the correct account or contact site support.</p>
+                    <hr>
+                    <a href="{% url 'dashboard:home' %}" class="btn btn-secondary">Return to Main Dashboard</a>
+                    <a href="{% url 'landing:index' %}" class="btn btn-primary">Go to Homepage</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

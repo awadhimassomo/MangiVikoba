@@ -1,0 +1,11 @@
+/* This is a placeholder file for the favicon.ico
+   For a real project, you would want to create a proper .ico file using an image editor.
+   The ICO file format is a container for multiple images at different sizes.
+   
+   In a real implementation, you would:
+   1. Create an image with the Mangi Kikoba branding (M logo with gradient background)
+   2. Save it in multiple sizes (16x16, 32x32, 48x48)
+   3. Convert to .ico format
+   
+   For now, this file serves as a reminder to create the favicon.
+*/

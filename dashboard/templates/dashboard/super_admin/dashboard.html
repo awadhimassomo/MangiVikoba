@@ -1,0 +1,230 @@
+{% extends 'dashboard/super_admin/base.html' %}
+
+{% block subtitle %}Overview of system performance and key metrics{% endblock %}
+
+{% block content %}
+<!-- Key Statistics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="stat-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">Total Vikoba</p>
+                <h3 class="text-3xl font-bold text-primary-dark">{{ total_vikoba }}</h3>
+                <p class="text-xs text-green-600 mt-2">+{{ new_vikoba_count }} this month</p>
+            </div>
+            <div class="bg-green-100 rounded-full p-3">
+                <svg class="w-8 h-8 text-primary-main" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">Total Members</p>
+                <h3 class="text-3xl font-bold text-primary-dark">{{ total_members }}</h3>
+                <p class="text-xs text-green-600 mt-2">+{{ new_members_count }} this month</p>
+            </div>
+            <div class="bg-blue-100 rounded-full p-3">
+                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">Total Investments</p>
+                <h3 class="text-3xl font-bold text-primary-dark">{{ total_investments }}</h3>
+                <p class="text-xs text-green-600 mt-2">{{ active_investments }} active</p>
+            </div>
+            <div class="bg-yellow-100 rounded-full p-3">
+                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm text-gray-600 mb-1">Investment Value</p>
+                <h3 class="text-3xl font-bold text-primary-dark">{{ total_investment_value|floatformat:0 }}</h3>
+                <p class="text-xs text-gray-500 mt-2">TZS</p>
+            </div>
+            <div class="bg-purple-100 rounded-full p-3">
+                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Two Column Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <!-- Recent Investments -->
+    <div class="lg:col-span-2 card p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Recent Investments</h2>
+            <a href="{% url 'dashboard:super_admin:investment_create' %}" class="btn-primary text-sm">
+                + New Investment
+            </a>
+        </div>
+        
+        <div class="space-y-4">
+            {% for investment in recent_investments %}
+            <div class="border border-gray-200 rounded-lg p-4 hover:border-primary-main transition-all">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-800">{{ investment.title }}</h3>
+                        <p class="text-sm text-gray-600 mt-1">{{ investment.description|truncatewords:15 }}</p>
+                    </div>
+                    <span class="badge {% if investment.status == 'active' %}badge-success{% elif investment.status == 'draft' %}badge-warning{% else %}badge-info{% endif %}">
+                        {{ investment.get_status_display }}
+                    </span>
+                </div>
+                <div class="flex justify-between items-center mt-3">
+                    <div class="text-sm">
+                        <span class="text-gray-600">Target:</span>
+                        <span class="font-semibold text-primary-dark">{{ investment.target_amount|floatformat:0 }} TZS</span>
+                    </div>
+                    <div class="text-sm">
+                        <span class="text-gray-600">Return:</span>
+                        <span class="font-semibold text-green-600">{{ investment.expected_return_rate }}%</span>
+                    </div>
+                    <a href="{% url 'dashboard:super_admin:investment_detail' investment.id %}" class="text-primary-main hover:text-primary-dark text-sm font-medium">
+                        View Details →
+                    </a>
+                </div>
+                <!-- Progress bar -->
+                <div class="mt-3">
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-accent-main h-2 rounded-full" style="width: {{ investment.progress_percentage }}%"></div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-1">{{ investment.progress_percentage|floatformat:1 }}% funded</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-8">No investments yet. Create your first investment!</p>
+            {% endfor %}
+        </div>
+        
+        <div class="mt-6 text-center">
+            <a href="{% url 'dashboard:super_admin:investment_list' %}" class="text-primary-main hover:text-primary-dark font-medium">
+                View All Investments →
+            </a>
+        </div>
+    </div>
+    
+    <!-- Investment Distribution -->
+    <div class="card p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-6">Investment Distribution</h2>
+        
+        <div class="space-y-4">
+            {% for stat in investment_stats %}
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-700">{{ stat.investment_type|title }}</span>
+                    <span class="text-sm font-semibold text-primary-dark">{{ stat.count }}</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-primary-main h-2 rounded-full" style="width: {% widthratio stat.count total_investments 100 %}%"></div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4">No investment data available</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Recent Vikoba and Audit Logs -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Recent Vikoba -->
+    <div class="card p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Recent Vikoba</h2>
+            <a href="{% url 'dashboard:super_admin:vikoba_management' %}" class="text-primary-main hover:text-primary-dark text-sm font-medium">
+                View All →
+            </a>
+        </div>
+        
+        <div class="space-y-3">
+            {% for kikoba in recent_vikoba %}
+            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-primary-main transition-all">
+                <div>
+                    <h3 class="font-semibold text-gray-800">{{ kikoba.name }}</h3>
+                    <p class="text-sm text-gray-600">{{ kikoba.kikoba_number }} • {{ kikoba.location|default:"No location" }}</p>
+                </div>
+                <a href="{% url 'dashboard:super_admin:vikoba_detail' kikoba.id %}" class="text-primary-main hover:text-primary-dark">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4">No vikoba found</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Recent Activity Logs -->
+    <div class="card p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">Recent Activity</h2>
+            <a href="{% url 'dashboard:super_admin:audit_logs' %}" class="text-primary-main hover:text-primary-dark text-sm font-medium">
+                View All →
+            </a>
+        </div>
+        
+        <div class="space-y-3">
+            {% for log in recent_logs %}
+            <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div class="flex-shrink-0 mt-1">
+                    {% if log.action == 'create' %}
+                    <div class="bg-green-100 rounded-full p-1">
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </div>
+                    {% elif log.action == 'update' %}
+                    <div class="bg-blue-100 rounded-full p-1">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </div>
+                    {% elif log.action == 'delete' %}
+                    <div class="bg-red-100 rounded-full p-1">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </div>
+                    {% else %}
+                    <div class="bg-gray-200 rounded-full p-1">
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm text-gray-800">
+                        <span class="font-semibold">{{ log.user.name }}</span>
+                        {{ log.description|truncatewords:10 }}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">{{ log.timestamp|timesince }} ago</p>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-center py-4">No recent activity</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

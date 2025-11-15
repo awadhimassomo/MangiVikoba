@@ -1,0 +1,126 @@
+{% extends 'landing/base.html' %}
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block title %}Login | Mangi Vikoba+{% endblock %}
+{% block body_class %}login-page-background{% endblock %}
+
+{% block content %}
+<style>
+  .login-section {
+    padding: 80px 0;
+    min-height: 70vh; /* Ensure it takes up significant height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--background-light); /* Changed to white background */
+  }
+
+  .login-container {
+    max-width: 450px;
+    width: 100%;
+    padding: 2rem;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    margin: auto; /* Center the form */
+  }
+
+  .login-container h2 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .form-control {
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ced4da;
+  }
+
+  .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-color-rgb), 0.25); /* Assuming you have --primary-color-rgb */
+  }
+  
+  /* Fallback if --primary-color-rgb is not defined */
+  .form-control:focus {
+    border-color: #C72C41; /* ruby-red */
+    box-shadow: 0 0 0 0.2rem rgba(199, 44, 65, 0.25);
+  }
+
+
+  .btn-login {
+    /* MangiVikoba Brand Colors: Ruby Red → Burgundy */
+    background: linear-gradient(135deg, #C72C41, #801336);
+    border: none;
+    color: white;
+    padding: 0.75rem;
+    width: 100%;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(199, 44, 65, 0.3);
+    transition: all 0.3s ease;
+  }
+
+  .btn-login:hover {
+    /* Burgundy → Dark Maroon on hover */
+    background: linear-gradient(135deg, #801336, #510A32);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(199, 44, 65, 0.4);
+  }
+
+  .extra-links {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+
+  .extra-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+  }
+
+  .extra-links a:hover {
+    text-decoration: underline;
+  }
+</style>
+
+<section class="login-section">
+  <div class="container">
+    <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-8 col-sm-10">
+        <div class="login-container">
+                    <h2>{% trans "Login to Mangi Vikoba+" %}</h2>
+                    {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">
+              {% for error in form.non_field_errors %}
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if user.is_authenticated %}
+                        <p class="text-center">{% blocktrans %}You are already logged in as {{ user.username }}.{% endblocktrans %} <a href="{% url 'logout' %}">{% trans "Logout" %}</a></p>
+          {% else %}
+                        <form method="post" action="{% url 'login' %}">
+              {% csrf_token %}
+              {{ form|crispy }}
+              <button type="submit" class="btn btn-login">{% trans "Login" %}</button>
+            </form>
+            <div class="extra-links">
+                            <p><a href="{% url 'password_reset_request' %}">{% trans "Forgot PIN?" %}</a></p>
+                            <p>{% trans "Don't have an account?" %} <a href="{% url 'registration:unified_register' %}">{% trans "Sign up" %}</a></p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

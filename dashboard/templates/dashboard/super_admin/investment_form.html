@@ -1,0 +1,229 @@
+{% extends 'dashboard/super_admin/base.html' %}
+
+{% block subtitle %}{% if investment %}Edit investment details{% else %}Create a new investment opportunity{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="card p-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="border-b border-gray-200 pb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Basic Information</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Investment Title *</label>
+                        <input type="text" id="title" name="title" required 
+                               value="{% if investment %}{{ investment.title }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                               placeholder="e.g., Agricultural Investment in Morogoro">
+                    </div>
+                    
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                        <textarea id="description" name="description" rows="4" required
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                                  placeholder="Detailed description of the investment opportunity">{% if investment %}{{ investment.description }}{% endif %}</textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="investment_type" class="block text-sm font-medium text-gray-700 mb-2">Investment Type *</label>
+                            <select id="investment_type" name="investment_type" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                                <option value="">Select Type</option>
+                                {% for value, label in investment_types %}
+                                <option value="{{ value }}" {% if investment and investment.investment_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="risk_level" class="block text-sm font-medium text-gray-700 mb-2">Risk Level *</label>
+                            <select id="risk_level" name="risk_level" required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                                <option value="">Select Risk Level</option>
+                                {% for value, label in risk_levels %}
+                                <option value="{{ value }}" {% if investment and investment.risk_level == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="location" class="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                        <input type="text" id="location" name="location"
+                               value="{% if investment %}{{ investment.location }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                               placeholder="e.g., Morogoro, Tanzania">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Financial Details -->
+            <div class="border-b border-gray-200 pb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Financial Details</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="minimum_amount" class="block text-sm font-medium text-gray-700 mb-2">Minimum Amount (TZS) *</label>
+                        <input type="number" id="minimum_amount" name="minimum_amount" required step="0.01"
+                               value="{% if investment %}{{ investment.minimum_amount }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                               placeholder="e.g., 100000">
+                    </div>
+                    
+                    <div>
+                        <label for="maximum_amount" class="block text-sm font-medium text-gray-700 mb-2">Maximum Amount (TZS)</label>
+                        <input type="number" id="maximum_amount" name="maximum_amount" step="0.01"
+                               value="{% if investment %}{{ investment.maximum_amount }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                               placeholder="e.g., 10000000">
+                    </div>
+                    
+                    <div>
+                        <label for="target_amount" class="block text-sm font-medium text-gray-700 mb-2">Target Amount (TZS) *</label>
+                        <input type="number" id="target_amount" name="target_amount" required step="0.01"
+                               value="{% if investment %}{{ investment.target_amount }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                               placeholder="e.g., 50000000">
+                    </div>
+                    
+                    <div>
+                        <label for="expected_return_rate" class="block text-sm font-medium text-gray-700 mb-2">Expected Return Rate (%) *</label>
+                        <input type="number" id="expected_return_rate" name="expected_return_rate" required step="0.01"
+                               value="{% if investment %}{{ investment.expected_return_rate }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                               placeholder="e.g., 15.5">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Timeline -->
+            <div class="border-b border-gray-200 pb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Timeline</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
+                        <input type="date" id="start_date" name="start_date" required
+                               value="{% if investment %}{{ investment.start_date|date:'Y-m-d' }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date *</label>
+                        <input type="date" id="end_date" name="end_date" required
+                               value="{% if investment %}{{ investment.end_date|date:'Y-m-d' }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="duration_months" class="block text-sm font-medium text-gray-700 mb-2">Duration (Months) *</label>
+                        <input type="number" id="duration_months" name="duration_months" required
+                               value="{% if investment %}{{ investment.duration_months }}{% endif %}"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent"
+                               placeholder="e.g., 12">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Status & Availability -->
+            <div class="border-b border-gray-200 pb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Status & Availability</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                        <select id="status" name="status" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                            {% for value, label in statuses %}
+                            <option value="{{ value }}" {% if investment and investment.status == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="available_to_all_vikoba" name="available_to_all_vikoba"
+                                   {% if not investment or investment.available_to_all_vikoba %}checked{% endif %}
+                                   class="w-4 h-4 text-primary-main border-gray-300 rounded focus:ring-primary-main"
+                                   onchange="toggleVikobaSelection()">
+                            <span class="ml-2 text-sm font-medium text-gray-700">Available to all Vikoba</span>
+                        </label>
+                    </div>
+                    
+                    <div id="vikoba_selection" class="{% if not investment or investment.available_to_all_vikoba %}hidden{% endif %}">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Specific Vikoba</label>
+                        <div class="border border-gray-300 rounded-lg p-4 max-h-48 overflow-y-auto space-y-2">
+                            {% for kikoba in all_vikoba %}
+                            <label class="flex items-center">
+                                <input type="checkbox" name="specific_vikoba" value="{{ kikoba.id }}"
+                                       {% if investment and kikoba in investment.specific_vikoba.all %}checked{% endif %}
+                                       class="w-4 h-4 text-primary-main border-gray-300 rounded focus:ring-primary-main">
+                                <span class="ml-2 text-sm text-gray-700">{{ kikoba.name }} ({{ kikoba.kikoba_number }})</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Files -->
+            <div class="pb-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Media & Documents</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="image" class="block text-sm font-medium text-gray-700 mb-2">Investment Image</label>
+                        {% if investment and investment.image %}
+                        <div class="mb-2">
+                            <img src="{{ investment.image.url }}" alt="Current image" class="w-full h-32 object-cover rounded-lg">
+                            <p class="text-xs text-gray-600 mt-1">Current image (upload new to replace)</p>
+                        </div>
+                        {% endif %}
+                        <input type="file" id="image" name="image" accept="image/*"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="documents" class="block text-sm font-medium text-gray-700 mb-2">Supporting Documents</label>
+                        {% if investment and investment.documents %}
+                        <div class="mb-2">
+                            <p class="text-sm text-gray-600">Current: <a href="{{ investment.documents.url }}" class="text-primary-main hover:underline" target="_blank">View Document</a></p>
+                        </div>
+                        {% endif %}
+                        <input type="file" id="documents" name="documents"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-main focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex gap-4 pt-6 border-t border-gray-200">
+                <button type="submit" class="btn-primary flex-1">
+                    {% if investment %}Update Investment{% else %}Create Investment{% endif %}
+                </button>
+                <a href="{% url 'dashboard:super_admin:investment_list' %}" class="btn-secondary flex-1 text-center">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleVikobaSelection() {
+    const checkbox = document.getElementById('available_to_all_vikoba');
+    const selection = document.getElementById('vikoba_selection');
+    
+    if (checkbox.checked) {
+        selection.classList.add('hidden');
+    } else {
+        selection.classList.remove('hidden');
+    }
+}
+</script>
+{% endblock %}

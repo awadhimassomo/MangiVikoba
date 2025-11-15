@@ -1,0 +1,18 @@
+{% extends 'dashboard/base_dashboard_new.html' %}
+
+{% block title %}Member Management - Mangi Vikoba+{% endblock %}
+
+{% block page_title %}Member Management{% endblock %}
+
+{% block dashboard_content %}
+<div class="p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-gray-700">Manage Members</h2>
+        <a href="{% url 'dashboard:add_member' %}" class="bg-bright-red hover:bg-ruby-red text-white font-bold py-2 px-4 rounded shadow-md transition duration-150 ease-in-out">
+            <i class="fas fa-plus mr-2"></i> Add New Member
+        </a>
+    </div>
+    <p class="mt-2 text-gray-600">Member management interface will be here.</p>
+    <!-- Add member management specific content here -->
+</div>
+{% endblock %}

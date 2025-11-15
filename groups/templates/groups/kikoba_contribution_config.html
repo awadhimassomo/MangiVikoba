@@ -1,0 +1,50 @@
+{% extends "dashboard/base_dashboard_new.html" %}
+{% load static %}
+
+{% block title %}Contribution Configuration - {{ current_kikoba.name }}{% endblock %}
+
+{% block page_title %}Contribution Configuration for {{ current_kikoba.name }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-xl rounded-lg p-6 md:p-8">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-4">Set Contribution Rules</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-4 rounded-md 
+                    {% if message.tags == 'success' %}bg-green-100 border border-green-400 text-green-700
+                    {% elif message.tags == 'error' %}bg-red-100 border border-red-400 text-red-700
+                    {% else %}bg-blue-100 border border-blue-400 text-blue-700{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for field in form %}
+                    <div class="{% if field.name == 'emergency_fund_required' %}md:col-span-2 flex items-center{% else %}space-y-1{% endif %}">
+                        <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 {% if field.name == 'emergency_fund_required' %}mr-3{% endif %}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="pt-6 border-t border-gray-200 flex justify-end">
+                <button type="submit" class="bg-bright-red hover:bg-ruby-red text-white font-bold py-2.5 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150">
+                    <i class="fas fa-save mr-2"></i>Save Configuration
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+/* Additional styles for the Mangi Kikoba landing page */
+
+/* Testimonial section styling */
+.testimonial-box {
+    padding: 30px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.testimonial-box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--bright-red), var(--burgundy), var(--deep-purple));
+}
+
+.testimonial-box:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.testimonial-box img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    border: 3px solid white;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.testimonial-box p {
+    margin: 20px 0;
+    font-style: italic;
+    color: #455A64;
+}
+
+.testimonial-box .text-warning {
+    color: var(--bright-red) !important;
+}
+
+/* Featured categories styling */
+.category-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.category-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.category-card .card-header {
+    background: linear-gradient(135deg, var(--ruby-red), var(--burgundy));
+    color: white;
+    font-weight: 600;
+    padding: 15px 20px;
+}
+
+.category-card .card-body {
+    padding: 20px;
+}
+
+/* Featured content styling */
+.content-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.content-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.content-card .card-img-top {
+    height: 180px;
+    object-fit: cover;
+}
+
+.content-card .card-body {
+    padding: 20px;
+}
+
+.content-card .badge {
+    background: linear-gradient(135deg, var(--bright-red), var(--ruby-red));
+    font-weight: 500;
+    border-radius: 20px;
+    padding: 5px 10px;
+}
+
+/* App download badges */
+.app-badge {
+    height: 40px;
+    transition: all 0.3s ease;
+}
+
+.app-badge:hover {
+    transform: scale(1.05);
+}

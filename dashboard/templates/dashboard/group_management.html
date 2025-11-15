@@ -1,0 +1,192 @@
+{% extends "dashboard/base_dashboard_new.html" %}
+{% load static %}
+
+{% block title %}{{ page_title|default:"Group Management" }} - {{ current_kikoba.name }}{% endblock %}
+
+{% block page_title %}{{ page_title|default:"Group Management" }}{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Button to trigger Add New Member Modal -->
+    <div class="mb-6 flex justify-end">
+        <button id="open-add-member-modal-button" class="bg-bright-red hover:bg-ruby-red text-white font-bold py-2 px-4 rounded-lg shadow hover:shadow-md transition-all duration-150">
+            <i class="fas fa-plus mr-2"></i>Add New Member
+        </button>
+    </div>
+
+    <!-- Add New Member Modal -->
+    <div id="add-member-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out">
+        <div class="bg-white rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-lg mx-4 sm:mx-auto transform transition-all duration-300 ease-in-out scale-95 opacity-0" id="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-700">Add New Member to {{ current_kikoba.name }}</h2>
+                <button id="close-add-member-modal-button" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                        <strong class="font-bold">Error!</strong>
+                        <span class="block sm:inline">{{ form.non_field_errors|join:", " }}</span>
+                    </div>
+                {% endif %}
+
+                {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+                
+                <div class="flex justify-end pt-4">
+                    <button type="button" id="cancel-add-member-button" class="mr-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg transition-all duration-150">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-bright-red hover:bg-ruby-red text-white font-bold py-2 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150">
+                        <i class="fas fa-user-plus mr-2"></i>Add Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Current Members List Section -->
+    <div class="bg-white shadow-xl rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-semibold text-gray-700">Current Members ({{ members|length }})</h2>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined</th>
+                        <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for membership in members %}
+                    <tr>
+                        <td class="py-4 px-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                {% if membership.user.profile_photo %}
+                                    <img class="h-10 w-10 rounded-full mr-3 object-cover" src="{{ membership.user.profile_photo.url }}" alt="{{ membership.user.name }}">
+                                {% else %}
+                                    <span class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold mr-3 text-lg">
+                                        {{ membership.user.name|slice:":1"|upper }}
+                                    </span>
+                                {% endif %}
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ membership.user.name }}
+                                    {% if membership.user.verification_status == 'verified' %}
+                                        <i class="fas fa-star text-yellow-500 ml-1" title="Verified Member"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 whitespace-nowrap text-sm text-gray-600">{{ membership.user.phone_number|default:"N/A" }}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-sm text-gray-600">{{ membership.user.email|default:"N/A" }}</td>
+                        <td class="py-4 px-4 whitespace-nowrap">
+                            <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if membership.role == 'kikoba_admin' %}bg-red-100 text-red-800
+                                {% elif membership.role == 'chairperson' %}bg-yellow-100 text-yellow-800
+                                {% elif membership.role == 'treasurer' %}bg-green-100 text-green-800
+                                {% elif membership.role == 'secretary' %}bg-blue-100 text-blue-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ membership.get_role_display }}
+                            </span>
+                        </td>
+                        <td class="py-4 px-4 whitespace-nowrap text-sm text-gray-600">{{ membership.date_joined|date:"d M Y" }}</td>
+                        <td class="py-4 px-4 whitespace-nowrap text-sm font-medium space-x-2">
+                            <a href="#" class="text-indigo-600 hover:text-indigo-900 hover:underline">Edit Role</a>
+                            <a href="#" class="text-red-600 hover:text-red-900 hover:underline">Remove</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-6 px-4 text-center text-sm text-gray-500">No members found in this Kikoba.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Placeholder for Edit Member Form/Modal (if needed separately) -->
+    <div id="edit-member-form-modal" class="hidden">
+        <p>Form for editing a member will appear here.</p>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addMemberModal = document.getElementById('add-member-modal');
+    const modalContent = document.getElementById('modal-content');
+    const openModalButton = document.getElementById('open-add-member-modal-button');
+    const closeModalButton = document.getElementById('close-add-member-modal-button');
+    const cancelButton = document.getElementById('cancel-add-member-button');
+
+    function openModal() {
+        addMemberModal.classList.remove('hidden');
+        addMemberModal.classList.add('flex');
+        setTimeout(() => { // Allow display to update before starting transition
+            addMemberModal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeModal() {
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
+        addMemberModal.classList.add('opacity-0');
+        setTimeout(() => { // Wait for transition to finish before hiding
+            addMemberModal.classList.add('hidden');
+            addMemberModal.classList.remove('flex');
+        }, 300); // Corresponds to transition duration
+    }
+
+    if (openModalButton) {
+        openModalButton.addEventListener('click', openModal);
+    }
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', closeModal);
+    }
+    if (cancelButton) {
+        cancelButton.addEventListener('click', closeModal);
+    }
+
+    // Close modal if clicking outside of it
+    if (addMemberModal) {
+        addMemberModal.addEventListener('click', function(event) {
+            if (event.target === addMemberModal) {
+                closeModal();
+            }
+        });
+    }
+
+    // If form has errors (e.g., after a POST request with invalid data), keep the modal open.
+    // This requires the view to pass a flag or for JS to check for error messages in the form.
+    // For simplicity, we'll check if the form has any error messages displayed.
+    const formHasErrors = document.querySelector('#add-member-modal .bg-red-100');
+    if (formHasErrors) {
+        openModal();
+    }
+});
+</script>
+{% endblock %}

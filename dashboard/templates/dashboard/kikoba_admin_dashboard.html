@@ -1,0 +1,94 @@
+{% extends "dashboard/base_dashboard_new.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ page_title|default:"Admin Dashboard" }}{% endblock %}
+
+{% block page_title %}{{ page_title|default:"Admin Dashboard" }}{% endblock %}
+
+{% block dashboard_content %}
+
+{% if is_superuser_dashboard %}
+    <!-- Superuser: List of all Kikobas -->
+    <div class="p-6 bg-white shadow-xl rounded-lg">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-6 border-b pb-3">Manage Kikobas</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kikoba Number</th>
+                        <th class="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for kikoba in all_kikobas %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-4 px-4 whitespace-nowrap">{{ kikoba.name }}</td>
+                            <td class="py-4 px-4 whitespace-nowrap">{{ kikoba.kikoba_number }}</td>
+                            <td class="py-4 px-4 whitespace-nowrap">
+                                <a href="?kikoba_id={{ kikoba.id }}" class="text-blue-600 hover:text-blue-800 font-medium">Manage</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-6 text-gray-500">No Kikobas found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <!-- Regular Admin Dashboard for a Specific Kikoba -->
+    <div class="flex flex-col space-y-8">
+        <!-- Kikoba Details Section -->
+        <section id="kikoba-details" class="p-6 bg-white shadow-xl rounded-lg">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-y-4 mb-6 border-b pb-3">
+                                <h2 class="text-2xl font-semibold text-gray-700">{% trans "Kikoba Details" %}</h2>
+                <a href="{% url 'groups:kikoba_contribution_config' kikoba_id=current_kikoba.id %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
+                                        <i class="fas fa-cog mr-2"></i> {% trans "Configure Contributions" %}
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div><span class="font-medium text-gray-600">{% trans "Kikoba Number:" %}</span> <span class="text-gray-800">{{ current_kikoba.kikoba_number }}</span></div>
+                <div><span class="font-medium text-gray-600">{% trans "Location:" %}</span> <span class="text-gray-800">{{ current_kikoba.location }}</span></div>
+                <div><span class="font-medium text-gray-600">{% trans "Members:" %}</span> <span class="text-gray-800">{{ total_members }}</span></div>
+                <div><span class="font-medium text-gray-600">{% trans "Created:" %}</span> <span class="text-gray-800">{{ current_kikoba.created_at|date:"d M Y" }}</span></div>
+            </div>
+        </section>
+
+        <!-- Navigation for Kikoba Modules -->
+        <nav class="bg-white shadow-xl rounded-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center border-b pb-3">Kikoba Management Modules</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <a href="{% url 'dashboard:group_management' %}" class="module-card-link flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl hover:border-blue-500 transform hover:scale-105 transition-all duration-300 text-gray-700 hover:text-blue-700 group">
+                    <i class="fas fa-users-cog fa-2x mb-3 text-blue-500 group-hover:text-blue-600 transition-colors duration-200"></i>
+                    <span class="text-lg font-medium text-center">Group Management</span>
+                </a>
+                <a href="{% url 'dashboard:savings_contributions' %}" class="module-card-link flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl hover:border-green-500 transform hover:scale-105 transition-all duration-300 text-gray-700 hover:text-green-700 group">
+                    <i class="fas fa-piggy-bank fa-2x mb-3 text-green-500 group-hover:text-green-600 transition-colors duration-200"></i>
+                    <span class="text-lg font-medium text-center">Savings & Contributions</span>
+                </a>
+                <a href="{% url 'dashboard:kikoba_loans_management' %}" class="module-card-link flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl hover:border-indigo-500 transform hover:scale-105 transition-all duration-300 text-gray-700 hover:text-indigo-700 group">
+                    <i class="fas fa-landmark fa-2x mb-3 text-indigo-500 group-hover:text-indigo-600 transition-colors duration-200"></i>
+                    <span class="text-lg font-medium text-center">Loans Management</span>
+                </a>
+                <a href="{% url 'dashboard:credit_score_engine' %}" class="module-card-link flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl hover:border-amber-500 transform hover:scale-105 transition-all duration-300 text-gray-700 hover:text-amber-700 group">
+                    <i class="fas fa-star-half-alt fa-2x mb-3 text-amber-500 group-hover:text-amber-600 transition-colors duration-200"></i>
+                    <span class="text-lg font-medium text-center">Shared Credit Score</span>
+                </a>
+                <a href="{% url 'dashboard:auditing_reporting' %}" class="module-card-link flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl hover:border-sky-500 transform hover:scale-105 transition-all duration-300 text-gray-700 hover:text-sky-700 group">
+                    <i class="fas fa-clipboard-list fa-2x mb-3 text-sky-500 group-hover:text-sky-600 transition-colors duration-200"></i>
+                    <span class="text-lg font-medium text-center">Auditing & Reporting</span>
+                </a>
+                <a href="{% url 'dashboard:learning_hub' %}" class="module-card-link flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-lg shadow-lg hover:shadow-xl hover:border-purple-500 transform hover:scale-105 transition-all duration-300 text-gray-700 hover:text-purple-700 group">
+                    <i class="fas fa-graduation-cap fa-2x mb-3 text-purple-500 group-hover:text-purple-600 transition-colors duration-200"></i>
+                    <span class="text-lg font-medium text-center">Learning Hub</span>
+                </a>
+            </div>
+        </nav>
+    </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,791 @@
+{% extends 'dashboard/base_dashboard_new.html' %}
+{% load static humanize %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block title %}Loans Management - {% if current_kikoba %}{{ current_kikoba.name }} - {% endif %}Kikoba Admin{% endblock %}
+
+{% block dashboard_content %}
+    <style>
+        /* MANGI BRAND COLORS */
+        :root {
+            --mangi-red: #C72C41;
+            --mangi-bright-red: #EE4540;
+            --mangi-burgundy: #801336;
+            --mangi-dark-maroon: #510A32;
+            --mangi-deep-purple: #20142C;
+            --gradient-mangi: linear-gradient(135deg, #C72C41 0%, #510A32 100%);
+            --light-bg: #F8F9FA;
+            
+            /* MANGI FUNCTIONAL MAPPING (Light Theme) */
+            --primary-color: var(--mangi-red); /* Main KPI, Header, Success Accent */
+            --secondary-color: var(--mangi-bright-red); /* Action Buttons, Highlighting */
+            --bg-main: var(--light-bg); /* Body Background - F8F9FA (WHITE BACKGROUND) */
+            --card-bg: white; /* Card Background */
+            --text-base: var(--mangi-deep-purple); /* Text Color - 20142C */
+            --text-secondary: #4b5563; /* Gray 600 for supporting text */
+            --border-color: #d1d5db; /* Gray 300 for borders */
+            --input-bg: white;
+            --table-hover-bg: #f3f4f6; /* Gray 50 for hover effect */
+        }
+        body {
+            background-color: var(--bg-main); /* Switched to White Background */
+            color: var(--text-base); /* Switched to Dark Text */
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-primary {
+            @apply bg-[var(--primary-color)] text-white font-medium rounded-lg shadow-md transition duration-150 hover:bg-[var(--mangi-burgundy)] focus:ring-2 focus:ring-[var(--primary-color)];
+            min-height: 48px; /* Touch target size requirement met */
+        }
+        .btn-secondary {
+            @apply bg-[var(--secondary-color)] text-white font-medium rounded-lg shadow-md transition duration-150 hover:bg-[var(--mangi-red)] focus:ring-2 focus:ring-[var(--secondary-color)];
+            min-height: 48px;
+        }
+        /* Custom Modal Transition */
+        .modal {
+            transition: opacity 0.2s ease-in-out;
+        }
+        .modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* Chart bar colors updated to Mangi semantic palette */
+        .bar-close { background-color: var(--mangi-red); } /* Mangi Red for Closed/Ready */
+        .bar-review { background-color: var(--mangi-bright-red); } /* Bright Red for Submitted/Review */
+        .bar-stalled { background-color: var(--mangi-burgundy); } /* Burgundy for Underwriting/Stalled */
+        .bar-new { background-color: #f59e0b; } /* Tailwind Amber for New to stand out */
+    </style>
+
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+
+<div class="p-4 sm:p-8 min-h-screen">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header & Compliance Section (User ID Display) -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 mb-6 bg-white rounded-xl shadow-xl border border-gray-200">
+            <div>
+                <h1 class="text-2xl font-bold text-[var(--primary-color)]">Loan Officer CRM Dashboard</h1>
+                <p class="text-gray-600">Manage loan applications and active loans for {{ current_kikoba.name }}</p>
+            </div>
+            <div class="flex items-center space-x-4 mt-3 sm:mt-0">
+                <!-- User ID (Compliance Audit Mandate) -->
+                <div class="text-xs text-gray-600 text-right">
+                    <span class="block font-semibold text-[var(--primary-color)]">LO User ID (Audit):</span>
+                    <code id="display-user-id" class="text-xs break-all text-gray-800">{{ request.user.username|default:'LO-'|add:request.user.id|default:'N/A' }}</code>
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- Pipeline Volume -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Pipeline Volume</p>
+                        <p class="text-2xl font-bold text-[var(--primary-color)]">{{ pending_applications|length }} Loans</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-[var(--primary-color)] bg-opacity-10">
+                        <svg class="w-6 h-6 text-[var(--primary-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="text-xs font-medium text-green-600">+2.5%</span>
+                    <span class="text-xs text-gray-500 ml-1">vs last month</span>
+                </div>
+            </div>
+
+            <!-- Conversion Rate -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Conversion Rate</p>
+                        <p class="text-2xl font-bold text-green-600">72%</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-green-100">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h3l2 4m0 0l-4 4m4-4l-4-4m2 10H5a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4m-6 10h8a2 2 0 002-2v-5"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="text-xs font-medium text-green-600">+5.2%</span>
+                    <span class="text-xs text-gray-500 ml-1">vs last month</span>
+                </div>
+            </div>
+
+            <!-- Time to Close -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Avg. Time to Close</p>
+                        <p class="text-2xl font-bold text-blue-600">21 Days</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="text-xs font-medium text-red-600">-3 days</span>
+                    <span class="text-xs text-gray-500 ml-1">vs last month</span>
+                </div>
+            </div>
+
+            <!-- Active Loans -->
+            <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600">Active Loans</p>
+                        <p class="text-2xl font-bold text-purple-600">{{ active_loans_count|default:0 }}</p>
+                    </div>
+                    <div class="p-3 rounded-full bg-purple-100">
+                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="text-xs font-medium text-green-600">+{{ active_loans_count|default:0|add:2 }}%</span>
+                    <span class="text-xs text-gray-500 ml-1">vs last month</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Pipeline Status Chart -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Loan Pipeline Status</h3>
+                    <div class="flex space-x-2
+                    ">
+                        <button class="px-3 py-1 text-xs font-medium rounded-full bg-[var(--primary-color)] text-white">This Month</button>
+                        <button class="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">Last Month</button>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="pipelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Risk Distribution -->
+            <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Risk Distribution</h3>
+                    <button class="text-[var(--primary-color)] text-sm font-medium">View Details</button>
+                </div>
+                <div class="h-64">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="space-y-6">
+            <!-- Pending Applications -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Pending Applications</h2>
+                </div>
+                {% if pending_applications %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Product</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applied On</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for app in pending_applications %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ app.member.get_full_name|default:app.member.phone_number }}</div>
+                                            <div class="text-sm text-gray-500">{{ app.member.phone_number }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ app.loan_product.name|default:"Standard Loan" }}</div>
+                                    <div class="text-sm text-gray-500">{{ app.purpose|truncatechars:30 }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    TZS {{ app.amount|intcomma }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ app.application_date|date:"M d, Y" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'dashboard:loan_application_detail' app.id %}" class="text-indigo-600 hover:text-indigo-900 mr-3">Review</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-6 text-center text-gray-500">
+                    No pending loan applications at this time.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Approved Applications -->
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">Approved Applications</h2>
+                </div>
+                {% if approved_applications %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Applicant</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Details</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved On</th>
+                                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for app in approved_applications|slice:":5" %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="ml-4">
+                                            <div class="text-sm font-medium text-gray-900">{{ app.member.get_full_name|default:app.member.phone_number }}</div>
+                                            <div class="text-sm text-gray-500">{{ app.member.phone_number }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">{{ app.loan_product.name|default:"Standard Loan" }}</div>
+                                    <div class="text-sm text-gray-500">{{ app.purpose|truncatechars:30 }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900">
+                                    TZS {{ app.amount|intcomma }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ app.decision_date|date:"M d, Y"|default:"-" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Approved
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if approved_applications|length > 5 %}
+                    <div class="px-6 py-3 bg-gray-50 text-right text-sm font-medium">
+                        <a href="#" class="text-indigo-600 hover:text-indigo-900">View all approved applications</a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="p-6 text-center text-gray-500">
+                    No approved loan applications at this time.
+                </div>
+                {% endif %}
+            </div>
+        </main>
+
+        <!-- Custom Error Modal (Replaces alert()/confirm() - UX/Compliance Mandate) -->
+        <div id="custom-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm border border-[var(--mangi-bright-red)]">
+                <h3 id="modal-title" class="text-xl font-bold text-[var(--mangi-bright-red)] mb-3">System Alert</h3>
+                <p id="modal-message" class="text-gray-700 mb-6">An error or confirmation message will appear here.</p>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeModal()" class="py-2 px-4 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400">
+                        Acknowledge
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic (No Firebase dependencies) -->
+    <script>
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Loan management page loaded');
+            
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Initialize charts
+            initializePipelineChart();
+            initializeRiskChart();
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+
+        // Initialize Pipeline Chart
+        function initializePipelineChart() {
+            const ctx = document.getElementById('pipelineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['New', 'In Review', 'Underwriting', 'Approved', 'Closed'],
+                    datasets: [{
+                        label: 'Number of Loans',
+                        data: [12, 19, 15, 8, 5],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(54, 162, 235, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(153, 102, 255, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize Risk Chart
+        function initializeRiskChart() {
+            const ctx = document.getElementById('riskChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                    datasets: [{
+                        data: [60, 25, 15],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.6)',
+                            'rgba(255, 206, 86, 0.6)',
+                            'rgba(255, 99, 132, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(255, 99, 132, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    filterTable(searchTerm);
+                });
+            }
+
+            // Filter buttons
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(btn => btn.classList.remove('bg-[var(--primary-color)]', 'text-white'));
+                    // Add active class to clicked button
+                    this.classList.add('bg-[var(--primary-color)]', 'text-white');
+                    
+                    const filterValue = this.getAttribute('data-filter');
+                    filterTableByStatus(filterValue);
+                });
+            });
+        }
+
+        // Filter table by search term
+        function filterTable(searchTerm) {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        // Filter table by status
+        function filterTableByStatus(status) {
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                if (status === 'all') {
+                    row.style.display = '';
+                } else {
+                    const rowStatus = row.getAttribute('data-status');
+                    row.style.display = rowStatus === status ? '' : 'none';
+                }
+            });
+        }
+
+        // Status color mapping with enhanced statuses
+        function getStatusColor(status) {
+            const statusMap = {
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'approved': 'bg-green-100 text-green-800',
+                'rejected': 'bg-red-100 text-red-800',
+                'disbursed': 'bg-blue-100 text-blue-800',
+                'repaid': 'bg-purple-100 text-purple-800',
+                'default': 'bg-gray-100 text-gray-800',
+                'new': 'bg-blue-50 text-blue-700',
+                'in_review': 'bg-yellow-50 text-yellow-700',
+                'underwriting': 'bg-purple-50 text-purple-700',
+                'ready_to_close': 'bg-green-50 text-green-700',
+                'closed': 'bg-gray-100 text-gray-700'
+            };
+            return statusMap[status?.toLowerCase()] || statusMap['default'];
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-TZ', {
+                style: 'currency',
+                currency: 'TZS',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        function calculatePipelineChartData(pipeline) {
+            const stages = {
+                'New Application': { value: 0, color: 'bar-new' },
+                'Documents Submitted': { value: 0, color: 'bar-review' },
+                'Underwriting Review': { value: 0, color: 'bar-stalled' },
+                'Ready to Close': { value: 0, color: 'bar-close' }
+            };
+
+            pipeline.forEach(loan => {
+                if (stages.hasOwnProperty(loan.status)) {
+                    stages[loan.status].value += loan.amount;
+                }
+                if (loan.status === 'Review Underwriting') {
+                    stages['Underwriting Review'].value += loan.amount;
+                }
+            });
+
+            const totalValue = Object.values(stages).reduce((sum, stage) => sum + stage.value, 0);
+
+            return Object.keys(stages).map(key => ({
+                label: key,
+                value: stages[key].value,
+                percentage: totalValue > 0 ? (stages[key].value / totalValue) * 100 : 0,
+                color: stages[key].color
+            }));
+        }
+
+        function renderPipelineChart(pipeline) {
+            const chartData = calculatePipelineChartData(pipeline);
+
+            const totalValueString = chartData.reduce((sum, item) => sum + item.value, 0).toLocaleString();
+
+            return `
+                <div class="p-6 bg-[var(--card-bg)] rounded-xl shadow-lg border border-[var(--border-color)] col-span-1 md:col-span-2">
+                    <h3 class="text-lg font-semibold mb-4 text-[var(--text-base)]">Pipeline Value Distribution ($${totalValueString})</h3>
+                    <div class="flex flex-col space-y-3">
+                        ${chartData.map(item => `
+                            <div>
+                                <div class="flex justify-between mb-1 text-sm">
+                                    <span class="text-[var(--text-secondary)]">${item.label}</span>
+                                    <span class="font-bold text-[var(--text-base)]">$${item.value.toLocaleString()}</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="${item.color} h-2 rounded-full" style="width: ${item.percentage.toFixed(1)}%;"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderLoanOfficerDashboard(data) {
+            const prioritizedLoan = data.pipelineData.find(loan => loan.daysOpen >= 15 && loan.status !== 'Ready to Close') || 
+                                    data.pipelineData[0];
+
+            // Filtered Pipeline Data based on currentFilter state
+            const filteredPipeline = data.pipelineData.filter(loan => 
+                currentFilter === 'All' || loan.status === currentFilter
+            );
+
+            return `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Stat Card 1: Pipeline -->
+                    <div class="p-6 bg-[var(--card-bg)] rounded-xl shadow-lg border-t-4 border-[var(--primary-color)]">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Total Pipeline (Active)</p>
+                        <p class="text-4xl font-extrabold mt-1 text-[var(--primary-color)]">${data.officerPipeline}</p>
+                        <p class="text-xs text-[var(--text-secondary)] mt-2">Applications requiring action.</p>
+                    </div>
+                    <!-- Stat Card 2: Pull-Through Rate (Conversion Metric) -->
+                    <div class="p-6 bg-[var(--card-bg)] rounded-xl shadow-lg border-t-4 border-[var(--secondary-color)]">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Pull-Through Rate</p>
+                        <p class="text-4xl font-extrabold mt-1 text-[var(--secondary-color)]">${(data.conversionRate * 100).toFixed(1)}%</p>
+                        <p class="text-xs text-[var(--text-secondary)] mt-2">Application to Close efficiency.</p>
+                    </div>
+                    <!-- Stat Card 3: Avg Time to Close -->
+                    <div class="p-6 bg-[var(--card-bg)] rounded-xl shadow-lg border-t-4 border-[var(--mangi-burgundy)]">
+                        <p class="text-sm font-medium text-[var(--text-secondary)]">Avg Time to Close</p>
+                        <p class="text-4xl font-extrabold mt-1 text-[var(--mangi-burgundy)]">${data.timeToClose}</p>
+                        <p class="text-xs text-[var(--text-secondary)] mt-2">Goal: 15 days or less.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <!-- Chart Section (Data Visualization) -->
+                    ${renderPipelineChart(data.pipelineData)}
+
+                    <!-- Priority Action Card -->
+                    <div class="p-6 bg-[var(--card-bg)] rounded-xl shadow-lg border-l-4 border-[var(--mangi-bright-red)]">
+                        <h3 class="text-lg font-semibold mb-3 text-[var(--mangi-bright-red)]">🔥 Priority Action</h3>
+                        <p class="text-sm font-medium text-[var(--text-base)]">Loan: ${prioritizedLoan.id}</p>
+                        <p class="text-xl font-bold mt-1 mb-3">${prioritizedLoan.officerAction}</p>
+                        <p class="text-xs text-[var(--text-secondary)]">Borrower: ${prioritizedLoan.borrowerName} (${prioritizedLoan.status})</p>
+                        <button onclick="openModal('Action Alert', 'Navigating to high-priority review for ${prioritizedLoan.borrowerName}.')" class="w-full mt-4 py-2 px-4 text-sm bg-[var(--mangi-red)] text-white rounded-lg hover:bg-[var(--mangi-burgundy)]">
+                            Go to File
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- Loan Pipeline Table & Controls -->
+                <div class="mt-4 p-6 bg-[var(--card-bg)] rounded-xl shadow-lg border border-[var(--border-color)]">
+                    <h2 class="text-xl font-semibold mb-4 text-[var(--text-base)]">Your Active Loans (${data.loanOfficer})</h2>
+
+                    <!-- Filter and Search Controls -->
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-4 space-y-3 sm:space-y-0">
+                        <input type="text" id="loan-search" placeholder="Search by borrower or ID..." class="p-2 w-full sm:w-1/3 bg-white border border-[var(--input-border)] rounded-lg text-[var(--text-base)] text-sm focus:border-[var(--mangi-red)] focus:ring-1 focus:ring-[var(--mangi-red)]" oninput="handleSearch(this.value)">
+                        
+                        <div class="flex space-x-2 overflow-x-auto">
+                            <button class="filter-btn text-xs px-3 py-1 rounded-full ${currentFilter === 'All' ? 'btn-secondary' : 'bg-gray-200 text-[var(--text-base)] hover:bg-gray-300'}" data-filter="All">All</button>
+                            <button class="filter-btn text-xs px-3 py-1 rounded-full ${currentFilter === 'Documents Submitted' ? 'btn-secondary' : 'bg-gray-200 text-[var(--text-base)] hover:bg-gray-300'}" data-filter="Documents Submitted">Documents</button>
+                            <button class="filter-btn text-xs px-3 py-1 rounded-full ${currentFilter === 'Underwriting Review' ? 'btn-secondary' : 'bg-gray-200 text-[var(--text-base)] hover:bg-gray-300'}" data-filter="Underwriting Review">Review</button>
+                            <button class="filter-btn text-xs px-3 py-1 rounded-full ${currentFilter === 'Ready to Close' ? 'btn-secondary' : 'bg-gray-200 text-[var(--text-base)] hover:bg-gray-300'}" data-filter="Ready to Close">Closing</button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-[var(--border-color)]">
+                            <thead>
+                                <tr class="text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
+                                    <th class="py-3 px-2 sm:px-4">Loan ID</th>
+                                    <th class="py-3 px-2 sm:px-4">Borrower</th>
+                                    <th class="py-3 px-2 sm:px-4">Amount</th>
+                                    <th class="py-3 px-2 sm:px-4">Stage Status</th>
+                                    <th class="py-3 px-2 sm:px-4">Risk Score</th>
+                                    <th class="py-3 px-2 sm:px-4">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pipeline-body" class="divide-y divide-[var(--border-color)]">
+                                ${filteredPipeline.length > 0 ? filteredPipeline.map(loan => `
+                                    <tr class="hover:bg-[var(--table-hover-bg)]">
+                                        <td class="py-3 px-2 sm:px-4 whitespace-nowrap text-sm">${loan.id}</td>
+                                        <td class="py-3 px-2 sm:px-4 whitespace-nowrap text-sm">${loan.borrowerName}</td>
+                                        <td class="py-3 px-2 sm:px-4 whitespace-nowrap text-sm">$${loan.amount.toLocaleString()}</td>
+                                        <td class="py-3 px-2 sm:px-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(loan.status)}">${loan.status}</span>
+                                        </td>
+                                        <td class="py-3 px-2 sm:px-4 whitespace-nowrap text-sm text-[var(--mangi-burgundy)]">${loan.riskScore}</td>
+                                        <td class="py-3 px-2 sm:px-4 whitespace-nowrap">
+                                            <button onclick="openModal('Loan Action', 'Executing action: ${loan.officerAction} for ${loan.borrowerName}.')" class="text-[var(--secondary-color)] hover:text-[var(--mangi-red)] text-sm">${loan.officerAction}</button>
+                                        </td>
+                                    </tr>
+                                `).join('') : `
+                                    <tr><td colspan="6" class="py-6 text-center text-gray-400">No loans match the current filter.</td></tr>
+                                `}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AI/LLM Integration for Risk Summary (Pillar 4B) -->
+                <div class="mt-8 p-6 bg-[var(--card-bg)] rounded-xl shadow-lg border border-[var(--border-color)]">
+                    <h2 class="text-xl font-semibold mb-4 text-[var(--text-base)]">AI Risk Profile Lookup (Gemini Integration)</h2>
+                    <p class="text-[var(--text-secondary)] mb-3 text-sm">Use alternative data to generate a quick risk summary based on the borrower's profile and application history.</p>
+                    
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                        <input type="text" id="risk-query" placeholder="Enter Borrower Name or Loan ID (e.g., Jane Doe)" class="p-3 w-full sm:w-2/3 bg-white border border-[var(--input-border)] rounded-lg text-[var(--text-base)] focus:border-[var(--mangi-red)] focus:ring-1 focus:ring-[var(--mangi-red)]" value="Jane Doe">
+                        <button onclick="generateRiskSummary()" class="btn-secondary w-full sm:w-1/3 text-sm">
+                            <span id="risk-btn-text">Generate Risk Summary</span>
+                            <span id="risk-loading" class="hidden ml-2">...</span>
+                        </button>
+                    </div>
+
+                    <div id="risk-output" class="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-[var(--text-base)] hidden">
+                        <!-- Summary will appear here -->
+                    </div>
+                </div>
+            `;
+        }
+        
+        // --- DYNAMIC LISTENERS & ACTIONS ---
+        
+        function attachTableListeners() {
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    currentFilter = e.target.dataset.filter;
+                    updateUI(mockLoanData); // Re-render with new filter
+                });
+            });
+        }
+        
+        window.handleSearch = function(query) {
+             // In a real app, this would filter the mockPipeline and re-render the table.
+             // For simplicity here, we rely on the filter buttons for state change.
+             console.log("Searching for:", query);
+        }
+
+        // --- AI/LLM INTEGRATION (MOCK GEMINI API CALL) ---
+
+        const apiKey = ""; // API key is left as empty string per instructions
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        window.generateRiskSummary = async function() {
+            const queryElement = document.getElementById('risk-query');
+            const outputElement = document.getElementById('risk-output');
+            const buttonText = document.getElementById('risk-btn-text');
+            const loadingIndicator = document.getElementById('risk-loading');
+            const userQuery = queryElement.value;
+
+            if (!userQuery.trim()) {
+                openModal('Input Required', 'Please enter a borrower name or Loan ID to generate a risk summary.');
+                return;
+            }
+
+            // Set loading state
+            buttonText.textContent = 'Generating...';
+            loadingIndicator.classList.remove('hidden');
+            outputElement.classList.add('hidden');
+            outputElement.innerHTML = '';
+            
+            // --- Gemini API Payload ---
+            const systemPrompt = `Act as a senior credit risk analyst. Analyze the following borrower information and provide a concise, two-sentence summary of the key credit risks and the recommended next action for the loan officer. Do not mention that the data is mock.`;
+            const mockBorrowerData = mockLoanData.pipelineData.find(l => l.borrowerName.includes(userQuery) || l.id === userQuery) || { borrowerName: userQuery, status: "Unknown", riskScore: 550 };
+            
+            const prompt = `Borrower: ${mockBorrowerData.borrowerName}. Loan Status: ${mockBorrowerData.status}. Risk Score (FICO/Alternative): ${mockBorrowerData.riskScore}. Generate summary.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+            };
+            
+            try {
+                let response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Could not generate summary.";
+
+                outputElement.innerHTML = `
+                    <p class="font-bold text-lg mb-2 text-[var(--primary-color)]">${mockBorrowerData.borrowerName}'s Risk Summary:</p>
+                    <p>${text}</p>
+                    <p class="mt-3 text-xs text-[var(--mangi-bright-red)]">Note: Risk score ${mockBorrowerData.riskScore} is factored in for analysis.</p>
+                `;
+                outputElement.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Gemini API call failed:", error);
+                outputElement.innerHTML = `<p class="text-[var(--mangi-bright-red)]">Error generating summary. Please check console for details.</p>`;
+                outputElement.classList.remove('hidden');
+            } finally {
+                // Reset loading state
+                buttonText.textContent = 'Generate Risk Summary';
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        // --- CUSTOM MODAL IMPLEMENTATION (Replaces alert/confirm) ---
+
+        function openModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        window.closeModal = function() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        // Make functions globally available for inline onclick attributes in rendered HTML
+        window.openModal = openModal;
+
+        // --- INITIALIZE THE APP (Simplified) ---
+        // Display the user ID and render the dashboard immediately since we removed Firebase auth logic.
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('display-user-id').textContent = currentUserId;
+            updateUI(mockLoanData);
+        });
+    </script>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Add any specific JS for this page if needed -->
+{% endblock %}

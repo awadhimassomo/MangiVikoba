@@ -1,0 +1,103 @@
+{% extends 'landing/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register - Mangi Vikoba+{% endblock %}
+
+{% block body_class %}register-page{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+                <div class="col-lg-8 col-md-10">
+            <div class="card">
+                <div class="card-header">
+                                        <ul class="nav nav-tabs nav-fill card-header-tabs" id="registrationTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="register-kikoba-tab" data-bs-toggle="tab" data-bs-target="#register-kikoba" type="button" role="tab" aria-controls="register-kikoba" aria-selected="true">Register a new Kikoba</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="register-member-tab" data-bs-toggle="tab" data-bs-target="#register-member" type="button" role="tab" aria-controls="register-member" aria-selected="false">Join an existing Kikoba</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="registrationTabsContent">
+                        <div class="tab-pane fade show active" id="register-kikoba" role="tabpanel" aria-labelledby="register-kikoba-tab">
+                            <h3 class="mb-4">Register a New Kikoba</h3>
+                            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                {{ kikoba_form|crispy }}
+                                <button type="submit" name="register_kikoba" class="btn btn-primary mt-3">Register Kikoba</button>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="register-member" role="tabpanel" aria-labelledby="register-member-tab">
+                            <h3 class="mb-4">Register as a Member</h3>
+                            <form method="post" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                {{ member_form|crispy }}
+                                <button type="submit" name="register_member" class="btn btn-secondary mt-3">Register as Member</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let tabToActivateId = null;
+        
+        // Check if the kikoba form has any elements indicating errors (e.g., class 'is-invalid' added by Bootstrap/Crispy)
+        const kikobaFormPane = document.getElementById('register-kikoba');
+        const memberFormPane = document.getElementById('register-member');
+
+        if (kikobaFormPane && kikobaFormPane.querySelector('.is-invalid, .invalid-feedback')) {
+            tabToActivateId = 'register-kikoba-tab';
+            localStorage.setItem('activeRegistrationTab', '#register-kikoba');
+        }
+        // Check member form errors. If both have errors, member tab will take precedence here.
+        if (memberFormPane && memberFormPane.querySelector('.is-invalid, .invalid-feedback')) {
+            tabToActivateId = 'register-member-tab';
+            localStorage.setItem('activeRegistrationTab', '#register-member');
+        }
+
+        // If no errors dictated the tab, try to load from localStorage
+        if (!tabToActivateId) {
+            const storedTabPaneId = localStorage.getItem('activeRegistrationTab');
+            if (storedTabPaneId) {
+                // storedTabPaneId is like "#register-kikoba"
+                // We need the button id, e.g., "register-kikoba-tab"
+                tabToActivateId = storedTabPaneId.substring(1) + '-tab'; 
+            }
+        }
+
+        // Default to the first tab if no other condition met or stored tab is invalid
+        if (!tabToActivateId || !document.getElementById(tabToActivateId)) {
+            tabToActivateId = 'register-kikoba-tab';
+        }
+
+        const tabElementToActivate = document.getElementById(tabToActivateId);
+        if (tabElementToActivate) {
+            try {
+                var tab = new bootstrap.Tab(tabElementToActivate);
+                tab.show();
+            } catch (e) {
+                console.error("Error showing tab: ", tabToActivateId, e);
+            }
+        }
+
+        // Save active tab to localStorage when a tab is shown
+        var tabButtons = document.querySelectorAll('#registrationTabs button[data-bs-toggle="tab"]');
+        tabButtons.forEach(function(button) {
+            button.addEventListener('shown.bs.tab', function (event) {
+                localStorage.setItem('activeRegistrationTab', event.target.getAttribute('data-bs-target'));
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,29 @@
+/* This is a simple favicon CSS generator
+   We'll use a CSS approach to create a favicon.ico file
+   for Mangi Kikoba with the brand colors
+*/
+
+.favicon-container {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #EE4540, #801336, #20142C);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.favicon-text {
+    color: white;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+    font-size: 16px;
+}
+
+/* Instructions to generate favicon:
+1. Create a simple HTML file with this CSS
+2. Use a browser to render it
+3. Take a screenshot and save as favicon.ico
+4. Place in static/img folder
+*/

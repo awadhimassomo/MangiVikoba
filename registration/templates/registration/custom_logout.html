@@ -1,0 +1,108 @@
+{% extends 'landing/base.html' %}
+{% load static %}
+
+{% block title %}Logged Out - Mangi Vikoba+{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 200px); padding: 2rem;">
+    <div class="card shadow-lg" style="max-width: 600px; width: 100%; border-radius: 20px; border-top: 4px solid var(--mangi-red); overflow: hidden;">
+        
+        <!-- Icon -->
+        <div class="text-center" style="padding: 3rem 2rem 1rem; background: linear-gradient(135deg, rgba(199, 44, 65, 0.05) 0%, rgba(238, 69, 64, 0.05) 100%);">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle" 
+                 style="width: 100px; height: 100px; background: rgba(199, 44, 65, 0.1); margin-bottom: 1rem; animation: pulse 2s infinite;">
+                <i class="fas fa-check-circle" style="font-size: 3.5rem; color: var(--mangi-red);"></i>
+            </div>
+        </div>
+
+        <div class="card-body text-center" style="padding: 2rem;">
+            <!-- Success message -->
+            <h2 class="fw-bold mb-3" style="color: var(--text-primary); font-size: 1.75rem;">
+                Successfully Logged Out!
+            </h2>
+            
+            <p class="text-muted mb-2" style="font-size: 1.1rem;">
+                Your session has ended securely
+            </p>
+            
+            <p class="text-muted mb-4">
+                Thank you for using <strong style="color: var(--mangi-red);">Mangi Vikoba+</strong>.<br>
+                We hope to see you again soon. Your data is safe with us.
+            </p>
+            
+            <!-- Security features -->
+            <div class="row g-3 py-4 mb-4" style="border-top: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef;">
+                <div class="col-4">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" 
+                             style="width: 50px; height: 50px; background: rgba(16, 185, 129, 0.1);">
+                            <i class="fas fa-shield-alt" style="font-size: 1.5rem; color: #10b981;"></i>
+                        </div>
+                        <small class="fw-semibold" style="color: #6c757d; font-size: 0.75rem;">SECURE</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" 
+                             style="width: 50px; height: 50px; background: rgba(59, 130, 246, 0.1);">
+                            <i class="fas fa-users" style="font-size: 1.5rem; color: #3b82f6;"></i>
+                        </div>
+                        <small class="fw-semibold" style="color: #6c757d; font-size: 0.75rem;">TRUSTED</small>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" 
+                             style="width: 50px; height: 50px; background: rgba(168, 85, 247, 0.1);">
+                            <i class="fas fa-lock" style="font-size: 1.5rem; color: #a855f7;"></i>
+                        </div>
+                        <small class="fw-semibold" style="color: #6c757d; font-size: 0.75rem;">PROTECTED</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="d-grid gap-3 d-md-flex justify-content-md-center mb-4">
+                <a href="{% url 'login' %}" class="btn btn-lg px-4" 
+                   style="background: var(--gradient-mangi); color: white; border: none; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 20px rgba(199, 44, 65, 0.3); transition: all 0.3s ease;"
+                   onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 25px rgba(199, 44, 65, 0.4)';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(199, 44, 65, 0.3)';">
+                    <i class="fas fa-sign-in-alt me-2"></i> Log In Again
+                </a>
+                
+                <a href="{% url 'landing:index' %}" class="btn btn-outline-secondary btn-lg px-4" 
+                   style="border-radius: 12px; font-weight: 600; transition: all 0.3s ease;"
+                   onmouseover="this.style.transform='translateY(-2px)'; this.style.borderColor='var(--mangi-red)'; this.style.color='var(--mangi-red)';"
+                   onmouseout="this.style.transform='translateY(0)'; this.style.borderColor=''; this.style.color='';">
+                    <i class="fas fa-home me-2"></i> Return to Home
+                </a>
+            </div>
+            
+            <!-- Additional information -->
+            <div class="pt-4" style="border-top: 1px solid #e9ecef;">
+                <p class="small text-muted mb-2">
+                    For security reasons, we recommend closing your browser if you're on a shared device.
+                </p>
+                <p class="small text-muted mb-0">
+                    Need help? <a href="#" style="color: var(--mangi-red); font-weight: 600; text-decoration: none;" 
+                                  onmouseover="this.style.textDecoration='underline';"
+                                  onmouseout="this.style.textDecoration='none';">Contact Support</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+    }
+</style>
+{% endblock %}

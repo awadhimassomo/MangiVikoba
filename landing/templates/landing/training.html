@@ -1,0 +1,151 @@
+{% extends 'landing/base.html' %}
+
+{% block title %}Mangi Vikoba+ Training Center | Financial Literacy Resources{% endblock %}
+
+{% block content %}
+<!-- Training Hero Section -->
+<section class="hero-section-small">
+    <div class="container">
+        <h1>Mangi Vikoba+ Training Center</h1>
+        <p>Improve your financial literacy and learn how to effectively manage your savings group with our comprehensive resources.</p>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="fw-bold mb-4">Learning Categories</h2>
+                <p class="lead mb-5">Explore our diverse range of financial education topics</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for category in categories %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h3 class="card-title h5 mb-3">{{ category.name }}</h3>
+                        <p class="card-text">{{ category.description }}</p>
+                        <a href="#category-{{ category.id }}" class="btn btn-primary mt-auto">View Resources</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <p class="mb-0 text-center">Training content is coming soon. Please check back later!</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Featured Content Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="fw-bold mb-4">Featured Resources</h2>
+                <p class="lead mb-5">Hand-picked content to help you succeed with your savings group</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            {% for content in content %}
+            {% if content.is_featured %}
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="training-card">
+                    <div class="training-card-image">
+                        {% if content.content_type == 'article' %}
+                        <i class="fas fa-file-alt"></i>
+                        {% elif content.content_type == 'video' %}
+                        <i class="fas fa-video"></i>
+                        {% else %}
+                        <i class="fas fa-headphones"></i>
+                        {% endif %}
+                    </div>
+                    <div class="training-card-body">
+                        <span class="training-category">{{ content.category.name }}</span>
+                        <h5>{{ content.title }}</h5>
+                        <p>{{ content.summary|truncatechars:100 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ content.created_at|date:"M d, Y" }}</small>
+                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <p class="mb-0 text-center">Featured content is coming soon. Please check back later!</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Content by Category -->
+{% for category in categories %}
+<section class="py-5" id="category-{{ category.id }}">
+    <div class="container">
+        <h2 class="fw-bold mb-4">{{ category.name }}</h2>
+        <p class="lead mb-4">{{ category.description }}</p>
+        
+        <div class="row">
+            {% for item in content %}
+            {% if item.category.id == category.id %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="training-card">
+                    <div class="training-card-image">
+                        {% if item.content_type == 'article' %}
+                        <i class="fas fa-file-alt"></i>
+                        {% elif item.content_type == 'video' %}
+                        <i class="fas fa-video"></i>
+                        {% else %}
+                        <i class="fas fa-headphones"></i>
+                        {% endif %}
+                    </div>
+                    <div class="training-card-body">
+                        <span class="training-category">{{ item.language|upper }}</span>
+                        <h5>{{ item.title }}</h5>
+                        <p>{{ item.summary|truncatechars:100 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ item.created_at|date:"M d, Y" }}</small>
+                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endfor %}
+
+<!-- Newsletter Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="fw-bold mb-4">Stay Updated with New Resources</h2>
+                <p class="lead mb-5">Subscribe to receive notifications when new training materials are available</p>
+                <form class="row justify-content-center">
+                    <div class="col-md-8 mb-3">
+                        <input type="email" class="form-control form-control-lg" placeholder="Your email address">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-light btn-lg w-100">Subscribe</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
