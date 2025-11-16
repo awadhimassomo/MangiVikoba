@@ -5,6 +5,14 @@ import uuid
 from django.utils.translation import gettext_lazy as _
 
 class Kikoba(models.Model): # Renamed from Group
+    GROUP_TYPE_CHOICES = (
+        ('standard', 'Standard VIKOBA (Variable-Share ASCA)'),
+        ('fixed_share', 'Fixed-Share VIKOBA'),
+        ('interest_refund', 'Interest Refund VIKOBA'),
+        ('rosca', 'ROSCA (Rotating Savings)'),
+        ('welfare', 'Welfare/Help Group (WCG)'),
+    )
+    
     FREQUENCY_CHOICES = (
         ('daily', 'Daily'),
         ('weekly', 'Weekly'),
@@ -60,6 +68,13 @@ class Kikoba(models.Model): # Renamed from Group
         unique=True,
         blank=True,
         help_text=_('Unique identification number for the Kikoba.')
+    )
+    group_type = models.CharField(
+        max_length=20,
+        choices=GROUP_TYPE_CHOICES,
+        null=True,  # Allow null for existing records
+        blank=True,  # Allow blank in forms for existing records
+        help_text=_('Type of the group which determines the financial model used.')
     )
     creator_phone_number = models.CharField(max_length=15, blank=True, null=True, help_text=_('Phone number of the user who initiated creation.'))
     

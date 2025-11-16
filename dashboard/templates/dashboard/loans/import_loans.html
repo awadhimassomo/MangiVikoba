@@ -1,0 +1,138 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Import Loans{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Import Loans</h2>
+                <p class="text-gray-600 mt-2">Upload a CSV file to import multiple loans at once.</p>
+            </div>
+            
+            {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                <div class="p-4 mb-4 text-sm rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-blue-100 text-blue-700{% endif %}" role="alert">
+                    {{ message }}
+                </div>
+                {% endfor %}
+                
+                {% if import_errors %}
+                <div class="mt-4 p-4 bg-red-50 rounded-lg">
+                    <h4 class="font-bold text-red-700">Import Errors:</h4>
+                    <ul class="mt-2 text-sm text-red-600 list-disc pl-5 space-y-1">
+                        {% for error in import_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Before you start</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <p>1. <a href="{% url 'dashboard:download_loan_import_template' %}" class="font-medium text-blue-600 hover:text-blue-500">Download the CSV template</a> and fill in your loan data.</p>
+                            <p>2. Make sure all required fields are filled in the CSV.</p>
+                            <p>3. The CSV must include these columns: member_id, amount, interest_rate, term_months, purpose, issue_date, due_date.</p>
+                            <p class="mt-2 font-medium">Note: The member_id must match an existing member in the system.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 gap-6">
+                    <!-- Kikoba Group Selection -->
+                    <div>
+                        <label for="id_kikoba" class="block text-sm font-medium text-gray-700">
+                            {{ form.kikoba.label }}
+                        </label>
+                        <div class="mt-1">
+                            {{ form.kikoba }}
+                        </div>
+                        {% if form.kikoba.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.kikoba.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.kikoba.help_text }}</p>
+                    </div>
+                    
+                    <!-- CSV File Upload -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">
+                            {{ form.csv_file.label }}
+                        </label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                            <div class="space-y-1 text-center">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="id_csv_file" class="relative cursor-pointer bg-white rounded-md font-medium text-bright-red hover:text-red-500 focus-within:outline-none">
+                                        <span>Upload a file</span>
+                                        {{ form.csv_file }}
+                                    </label>
+                                    <p class="pl-1">or drag and drop</p>
+                                </div>
+                                <p class="text-xs text-gray-500">
+                                    CSV file up to 10MB
+                                </p>
+                            </div>
+                        </div>
+                        {% if form.csv_file.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.csv_file.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">{{ form.csv_file.help_text|safe }}</p>
+                    </div>
+                </div>
+                
+                <div class="pt-5">
+                    <div class="flex justify-end space-x-3">
+                        <a href="{% url 'dashboard:loan_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bright-red">
+                            Cancel
+                        </a>
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-bright-red hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bright-red">
+                            Import Loans
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add file name display after file selection
+document.getElementById('id_csv_file').addEventListener('change', function(e) {
+    const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
+    const fileInfo = document.createElement('div');
+    fileInfo.className = 'mt-2 text-sm text-gray-700';
+    fileInfo.textContent = `Selected file: ${fileName}`;
+    
+    // Remove any existing file info
+    const existingInfo = document.querySelector('.file-info');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+    
+    // Add new file info
+    fileInfo.classList.add('file-info');
+    this.parentNode.parentNode.appendChild(fileInfo);
+});
+</script>
+{% endblock %}

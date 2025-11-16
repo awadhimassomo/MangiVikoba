@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.reverse import reverse
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth import get_user_model
@@ -205,6 +206,653 @@ class KikobaViewSet(viewsets.ModelViewSet):
         )
         serializer = KikobaMembershipSerializer(membership)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['get'])
+    def member_totals(self, request, pk=None):
+        """
+        Calculate and return member totals/payouts based on kikoba type.
+        This endpoint demonstrates how different kikoba types affect member payouts.
+        """
+        from decimal import Decimal
+        from finance import (
+            MemberContribution,
+            StandardVikoba,
+            FixedShareVikoba,
+            InterestRefundVikoba,
+            RoscaModel
+        )
+        
+        kikoba = self.get_object()
+        memberships = kikoba.kikoba_memberships.filter(is_active=True)
+        
+        if not memberships.exists():
+            return Response(
+                {"detail": "No active members in this kikoba"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get financial data from database
+        # For now, we'll use aggregated data. In production, this should come from actual transactions
+        total_interest_collected = Decimal('0')
+        total_fines_collected = Decimal('0')
+        
+        # Aggregate interest from loan repayments
+        from loans.models import Repayment
+        interest_data = Repayment.objects.filter(
+            loan__application__kikoba=kikoba,
+            is_verified=True
+        ).aggregate(total_interest=Sum('interest_amount'))
+        if interest_data['total_interest']:
+            total_interest_collected = Decimal(str(interest_data['total_interest']))
+        
+        # Aggregate fines (you can add fine model when implemented)
+        # For now, we'll use a sample value
+        total_fines_collected = Decimal('5000.00')  # Sample value
+        
+        # Build member contributions list
+        members = []
+        member_details = []
+        
+        for membership in memberships:
+            # Get member's share contributions
+            share_total = ShareContribution.objects.filter(
+                kikoba_membership=membership
+            ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+            
+            # Get member's entry fee
+            entry_fee = EntryFeePayment.objects.filter(
+                kikoba_membership=membership
+            ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+            
+            # Get member's emergency fund contributions
+            emergency_fund = EmergencyFundContribution.objects.filter(
+                kikoba_membership=membership
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+            
+            # Calculate total fixed contribution
+            fixed_contribution = share_total + entry_fee + emergency_fund
+            
+            # Get interest paid by this member on their loans
+            interest_paid = Repayment.objects.filter(
+                loan__application__member=membership.user,
+                loan__application__kikoba=kikoba,
+                is_verified=True
+            ).aggregate(total=Sum('interest_amount'))['total'] or Decimal('0')
+            interest_paid = Decimal(str(interest_paid))
+            
+            # For standard vikoba, calculate shares based on contribution
+            # Assuming 1 share = 10,000 TZS (you can adjust this)
+            share_value = Decimal('10000')
+            shares = share_total / share_value if share_total > 0 else Decimal('0')
+            
+            member_contrib = MemberContribution(
+                member_id=membership.user.id,
+                shares=shares,
+                fixed_contribution=fixed_contribution,
+                interest_paid=interest_paid,
+                fines_paid=Decimal('0')
+            )
+            members.append(member_contrib)
+            
+            member_details.append({
+                'user_id': membership.user.id,
+                'name': membership.user.name,
+                'phone_number': membership.user.phone_number,
+                'shares': float(shares),
+                'fixed_contribution': float(fixed_contribution),
+                'interest_paid': float(interest_paid)
+            })
+        
+        # Calculate payouts based on kikoba type
+        kikoba_type = kikoba.group_type or 'standard'
+        
+        if kikoba_type == 'standard':
+            payouts = StandardVikoba.calculate_payouts(
+                members, total_interest_collected, total_fines_collected
+            )
+            calculation_method = 'Proportional to shares (more shares = more profit)'
+        elif kikoba_type == 'fixed_share':
+            payouts = FixedShareVikoba.calculate_payouts(
+                members, total_interest_collected, total_fines_collected
+            )
+            calculation_method = 'Equal distribution among all members'
+        elif kikoba_type == 'interest_refund':
+            payouts = InterestRefundVikoba.calculate_payouts(
+                members, total_interest_collected, total_fines_collected
+            )
+            calculation_method = 'Interest refunded to borrowers + equal share of fines'
+        elif kikoba_type == 'rosca':
+            # ROSCA doesn't use the same payout calculation
+            contribution_per_member = Decimal('50000')  # Sample value
+            pot_size = RoscaModel.calculate_pot_size(
+                float(contribution_per_member), len(members)
+            )
+            payouts = {}  # ROSCA payouts rotate
+            calculation_method = f'Rotating pot of {pot_size:,.2f} TZS per meeting'
+        else:
+            payouts = {}
+            calculation_method = 'Unknown kikoba type'
+        
+        # Format the response
+        member_payouts = []
+        for detail in member_details:
+            user_id = detail['user_id']
+            payout = float(payouts.get(user_id, Decimal('0')))
+            profit = payout - detail['fixed_contribution']
+            
+            member_payouts.append({
+                'user_id': user_id,
+                'name': detail['name'],
+                'phone_number': detail['phone_number'],
+                'contribution': detail['fixed_contribution'],
+                'shares': detail['shares'],
+                'interest_paid': detail['interest_paid'],
+                'total_payout': payout,
+                'profit': profit
+            })
+        
+        response_data = {
+            'kikoba': {
+                'id': kikoba.id,
+                'name': kikoba.name,
+                'kikoba_number': kikoba.kikoba_number,
+                'group_type': kikoba_type,
+                'group_type_display': kikoba.get_group_type_display() if kikoba.group_type else 'Standard VIKOBA'
+            },
+            'financial_summary': {
+                'total_interest_collected': float(total_interest_collected),
+                'total_fines_collected': float(total_fines_collected),
+                'total_profit': float(total_interest_collected + total_fines_collected),
+                'calculation_method': calculation_method
+            },
+            'members': member_payouts,
+            'summary': {
+                'total_members': len(member_payouts),
+                'total_contributions': sum(m['contribution'] for m in member_payouts),
+                'total_payouts': sum(m['total_payout'] for m in member_payouts),
+                'total_profit_distributed': sum(m['profit'] for m in member_payouts)
+            }
+        }
+        
+        return Response(response_data)
+    
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    def debug_headers(self, request, pk=None):
+        """Debug endpoint to see what headers are being received"""
+        headers_dict = {}
+        for header, value in request.META.items():
+            if header.startswith('HTTP_') or header in ['CONTENT_TYPE', 'CONTENT_LENGTH']:
+                headers_dict[header] = value
+        
+        return Response({
+            'message': 'Headers received by backend',
+            'all_headers': headers_dict,
+            'has_authorization': 'HTTP_AUTHORIZATION' in request.META,
+            'authorization_value': request.META.get('HTTP_AUTHORIZATION', 'NOT PROVIDED'),
+            'user_is_authenticated': request.user.is_authenticated,
+            'user': str(request.user),
+            'kikoba_id': pk
+        })
+    
+    @action(detail=True, methods=['get'])
+    def test_auth(self, request, pk=None):
+        """Simple test endpoint to verify authentication is working"""
+        return Response({
+            'message': 'Authentication works!',
+            'user': request.user.phone_number if request.user.is_authenticated else 'Anonymous',
+            'is_authenticated': request.user.is_authenticated,
+            'kikoba_id': pk
+        })
+    
+    @action(
+        detail=True, 
+        methods=['get'], 
+        permission_classes=[IsAuthenticated],
+        authentication_classes=[JWTAuthentication]
+    )
+    def my_total(self, request, pk=None):
+        """
+        Get the total/payout for the currently logged-in user in this specific kikoba.
+        This endpoint is user-specific and only shows their own financial data.
+        """
+        # Debug logging
+        logger.info(f"my_total endpoint called - User: {request.user}, Is authenticated: {request.user.is_authenticated}")
+        logger.info(f"Authorization header: {request.headers.get('Authorization', 'Not provided')}")
+        
+        from decimal import Decimal
+        from finance import (
+            MemberContribution,
+            StandardVikoba,
+            FixedShareVikoba,
+            InterestRefundVikoba,
+            RoscaModel
+        )
+        
+        kikoba = self.get_object()
+        user = request.user
+        
+        # Check if user is a member of this kikoba
+        try:
+            membership = KikobaMembership.objects.get(
+                kikoba=kikoba,
+                user=user,
+                is_active=True
+            )
+        except KikobaMembership.DoesNotExist:
+            return Response(
+                {"detail": "You are not a member of this kikoba"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get all active members for calculation context
+        all_memberships = kikoba.kikoba_memberships.filter(is_active=True)
+        
+        # Get financial data from database - NO PLACEHOLDERS!
+        logger.info("="*80)
+        logger.info(f"CALCULATING TOTALS FOR KIKOBA: {kikoba.name} (ID: {kikoba.id})")
+        logger.info(f"User: {user.name} (ID: {user.id})")
+        logger.info("="*80)
+        
+        total_interest_collected = Decimal('0')
+        total_fines_collected = Decimal('0')
+        
+        # Aggregate interest from loan repayments
+        from loans.models import Repayment, Loan
+        total_repayments = Repayment.objects.filter(
+            loan__application__kikoba=kikoba,
+            is_verified=True
+        ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+        
+        logger.info(f"Total Verified Repayments: {total_repayments:,.2f} TZS")
+        
+        # Calculate actual interest from loans
+        # Get all loans for this kikoba
+        kikoba_loans = Loan.objects.filter(application__kikoba=kikoba, status='disbursed')
+        total_principal = kikoba_loans.aggregate(total=Sum('disbursed_amount'))['total'] or Decimal('0')
+        
+        # Interest = Total Repayments - Total Principal
+        total_interest_collected = max(total_repayments - total_principal, Decimal('0'))
+        logger.info(f"Total Principal Loaned: {total_principal:,.2f} TZS")
+        logger.info(f"Total Interest Collected: {total_interest_collected:,.2f} TZS")
+        
+        # TODO: Add Fines model to track actual fines
+        # For now, fines are 0 until fines are tracked in database
+        total_fines_collected = Decimal('0')  # Real value from database (currently no fines recorded)
+        logger.info(f"Total Fines Collected: {total_fines_collected:,.2f} TZS")
+        
+        # Build member contributions list for all members (needed for calculation)
+        members = []
+        
+        for mem in all_memberships:
+            # Get member's share contributions
+            share_total = ShareContribution.objects.filter(
+                kikoba_membership=mem
+            ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+            
+            # Get member's entry fee
+            entry_fee = EntryFeePayment.objects.filter(
+                kikoba_membership=mem
+            ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+            
+            # Get member's emergency fund contributions (NOT reclaimable)
+            emergency_fund = EmergencyFundContribution.objects.filter(
+                kikoba_membership=mem
+            ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+            
+            # Calculate total RECLAIMABLE contribution (excluding emergency fund)
+            # Emergency fund stays with the kikoba and is not part of payouts
+            fixed_contribution = share_total + entry_fee
+            
+            # Get interest paid by this member on their loans
+            member_repayments = Repayment.objects.filter(
+                loan__application__member=mem.user,
+                loan__application__kikoba=kikoba,
+                is_verified=True
+            ).aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+            
+            # Get principal borrowed by this member
+            member_loans = Loan.objects.filter(
+                application__member=mem.user,
+                application__kikoba=kikoba,
+                status='disbursed'
+            ).aggregate(total=Sum('disbursed_amount'))['total'] or Decimal('0')
+            
+            # Actual interest = Repayments - Principal
+            interest_paid = max(Decimal(str(member_repayments)) - Decimal(str(member_loans)), Decimal('0'))
+            
+            if mem.user.id == user.id:
+                logger.info(f"\n--- {mem.user.name}'s Contributions ---")
+                logger.info(f"  Share Contributions: {share_total:,.2f} TZS")
+                logger.info(f"  Entry Fee: {entry_fee:,.2f} TZS")
+                logger.info(f"  Emergency Fund: {emergency_fund:,.2f} TZS (NOT reclaimable)")
+                logger.info(f"  RECLAIMABLE Contribution: {fixed_contribution:,.2f} TZS")
+                logger.info(f"  Loans Taken: {member_loans:,.2f} TZS")
+                logger.info(f"  Total Repayments: {member_repayments:,.2f} TZS")
+                logger.info(f"  Interest Paid: {interest_paid:,.2f} TZS")
+            
+            # Calculate shares
+            share_value = Decimal('10000')
+            shares = share_total / share_value if share_total > 0 else Decimal('0')
+            
+            member_contrib = MemberContribution(
+                member_id=mem.user.id,
+                shares=shares,
+                fixed_contribution=fixed_contribution,
+                interest_paid=interest_paid,
+                fines_paid=Decimal('0')
+            )
+            members.append(member_contrib)
+        
+        # Calculate payouts based on kikoba type
+        kikoba_type = kikoba.group_type or 'standard'
+        
+        if kikoba_type == 'standard':
+            payouts = StandardVikoba.calculate_payouts(
+                members, total_interest_collected, total_fines_collected
+            )
+            calculation_method = 'Proportional to shares (more shares = more profit)'
+        elif kikoba_type == 'fixed_share':
+            payouts = FixedShareVikoba.calculate_payouts(
+                members, total_interest_collected, total_fines_collected
+            )
+            calculation_method = 'Equal distribution among all members'
+        elif kikoba_type == 'interest_refund':
+            payouts = InterestRefundVikoba.calculate_payouts(
+                members, total_interest_collected, total_fines_collected
+            )
+            calculation_method = 'Interest refunded to borrowers + equal share of fines'
+        elif kikoba_type == 'rosca':
+            contribution_per_member = Decimal('50000')
+            pot_size = RoscaModel.calculate_pot_size(
+                float(contribution_per_member), len(members)
+            )
+            payouts = {}
+            calculation_method = f'Rotating pot of {pot_size:,.2f} TZS per meeting'
+        else:
+            payouts = {}
+            calculation_method = 'Unknown kikoba type'
+        
+        # Get user's specific data
+        user_contribution = next(
+            (m for m in members if m.member_id == user.id), None
+        )
+        
+        if not user_contribution:
+            return Response(
+                {"detail": "Could not find your contribution data"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        user_payout = float(payouts.get(user.id, Decimal('0')))
+        user_profit = user_payout - float(user_contribution.fixed_contribution)
+        
+        logger.info(f"\n--- FINAL CALCULATION FOR {user.name} ---")
+        logger.info(f"  Total Contribution: {user_contribution.fixed_contribution:,.2f} TZS")
+        logger.info(f"  Interest Paid (Refunded): {user_contribution.interest_paid:,.2f} TZS")
+        logger.info(f"  Fine Share: {total_fines_collected / Decimal(str(len(members))):,.2f} TZS")
+        logger.info(f"  Total Payout: {user_payout:,.2f} TZS")
+        logger.info(f"  Profit: {user_profit:,.2f} TZS")
+        logger.info(f"  Calculation: {user_contribution.fixed_contribution} + {user_contribution.interest_paid} + {total_fines_collected / Decimal(str(len(members)))} = {user_payout}")
+        logger.info("="*80)
+        
+        response_data = {
+            'kikoba': {
+                'id': kikoba.id,
+                'name': kikoba.name,
+                'kikoba_number': kikoba.kikoba_number,
+                'group_type': kikoba_type,
+                'group_type_display': kikoba.get_group_type_display() if kikoba.group_type else 'Standard VIKOBA'
+            },
+            'membership': {
+                'membership_id': membership.id,
+                'role': membership.role,
+                'joined_at': membership.joined_at.isoformat()
+            },
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'phone_number': user.phone_number
+            },
+            'financial_data': {
+                'contribution': float(user_contribution.fixed_contribution),
+                'shares': float(user_contribution.shares),
+                'interest_paid_on_loans': float(user_contribution.interest_paid),
+                'total_payout': user_payout,
+                'profit': user_profit
+            },
+            'kikoba_summary': {
+                'total_members': len(members),
+                'total_interest_collected': float(total_interest_collected),
+                'total_fines_collected': float(total_fines_collected),
+                'calculation_method': calculation_method
+            },
+            'message': f'Your total payout in {kikoba.name} is {user_payout:,.2f} TZS (Profit: {user_profit:,.2f} TZS)'
+        }
+        
+        return Response(response_data)
+    
+    @action(
+        detail=True, 
+        methods=['get'], 
+        permission_classes=[IsAuthenticated],
+        authentication_classes=[JWTAuthentication]
+    )
+    def my_loans(self, request, pk=None):
+        """
+        Get the currently logged-in user's loans in this specific kikoba.
+        Returns loan details including
+        principal, repayments, and interest.
+        """
+        from decimal import Decimal
+        from loans.models import Loan, LoanApplication, Repayment
+        
+        kikoba = self.get_object()
+        user = request.user
+        
+        # Check if user is a member of this kikoba
+        try:
+            membership = KikobaMembership.objects.get(
+                kikoba=kikoba,
+                user=user,
+                is_active=True
+            )
+        except KikobaMembership.DoesNotExist:
+            return Response(
+                {"detail": "You are not a member of this kikoba"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get user's loans in this kikoba
+        user_loans = Loan.objects.filter(
+            application__member=user,
+            application__kikoba=kikoba
+        ).select_related('application')
+        
+        loans_data = []
+        total_borrowed = Decimal('0')
+        total_repaid = Decimal('0')
+        total_interest_paid = Decimal('0')
+        
+        for loan in user_loans:
+            # Get repayments for this loan
+            repayments = Repayment.objects.filter(loan=loan, is_verified=True)
+            loan_repaid = repayments.aggregate(total=Sum('amount_paid'))['total'] or Decimal('0')
+            
+            principal = loan.disbursed_amount or Decimal('0')
+            interest_paid = max(loan_repaid - principal, Decimal('0'))
+            
+            total_borrowed += principal
+            total_repaid += loan_repaid
+            total_interest_paid += interest_paid
+            
+            loans_data.append({
+                'loan_id': loan.id,
+                'disbursement_date': loan.disbursement_date.isoformat() if loan.disbursement_date else None,
+                'principal': float(principal),
+                'interest_rate': float(loan.interest_rate_at_disbursement or 0),
+                'total_repayable': float(loan.total_repayable or 0),
+                'amount_repaid': float(loan_repaid),
+                'interest_paid': float(interest_paid),
+                'status': loan.status,
+                'due_date': loan.current_due_date.isoformat() if loan.current_due_date else None
+            })
+        
+        return Response({
+            'kikoba': {
+                'id': kikoba.id,
+                'name': kikoba.name,
+                'kikoba_number': kikoba.kikoba_number
+            },
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'phone_number': user.phone_number
+            },
+            'summary': {
+                'total_loans': len(loans_data),
+                'total_borrowed': float(total_borrowed),
+                'total_repaid': float(total_repaid),
+                'total_interest_paid': float(total_interest_paid),
+                'outstanding_balance': float(total_borrowed - total_repaid)
+            },
+            'loans': loans_data
+        })
+    
+    @action(
+        detail=True, 
+        methods=['get'], 
+        permission_classes=[IsAuthenticated],
+        authentication_classes=[JWTAuthentication]
+    )
+    def my_shares(self, request, pk=None):
+        """
+        Get the currently logged-in user's share contributions in this specific kikoba.
+        """
+        from decimal import Decimal
+        
+        kikoba = self.get_object()
+        user = request.user
+        
+        # Check if user is a member of this kikoba
+        try:
+            membership = KikobaMembership.objects.get(
+                kikoba=kikoba,
+                user=user,
+                is_active=True
+            )
+        except KikobaMembership.DoesNotExist:
+            return Response(
+                {"detail": "You are not a member of this kikoba"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get share contributions
+        share_contributions = ShareContribution.objects.filter(
+            kikoba_membership=membership
+        ).order_by('-payment_date')
+        
+        contributions_data = []
+        total_shares = Decimal('0')
+        
+        for contribution in share_contributions:
+            contributions_data.append({
+                'id': contribution.id,
+                'amount': float(contribution.amount_paid),
+                'payment_date': contribution.payment_date.isoformat(),
+                'number_of_shares': float(contribution.number_of_shares or 0),
+                'is_verified': contribution.is_verified
+            })
+            total_shares += contribution.amount_paid
+        
+        # Calculate number of shares (assuming share_value from kikoba settings)
+        share_value = Decimal('10000')  # Default share value
+        number_of_shares = total_shares / share_value if total_shares > 0 else Decimal('0')
+        
+        return Response({
+            'kikoba': {
+                'id': kikoba.id,
+                'name': kikoba.name,
+                'kikoba_number': kikoba.kikoba_number
+            },
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'phone_number': user.phone_number
+            },
+            'summary': {
+                'total_amount': float(total_shares),
+                'number_of_shares': float(number_of_shares),
+                'share_value': float(share_value),
+                'total_contributions': len(contributions_data)
+            },
+            'contributions': contributions_data
+        })
+    
+    @action(
+        detail=True, 
+        methods=['get'], 
+        permission_classes=[IsAuthenticated],
+        authentication_classes=[JWTAuthentication]
+    )
+    def my_emergency_fund(self, request, pk=None):
+        """
+        Get the currently logged-in user's emergency fund contributions in this specific kikoba.
+        Note: Emergency fund is NOT reclaimable - it stays with the kikoba.
+        """
+        from decimal import Decimal
+        
+        kikoba = self.get_object()
+        user = request.user
+        
+        # Check if user is a member of this kikoba
+        try:
+            membership = KikobaMembership.objects.get(
+                kikoba=kikoba,
+                user=user,
+                is_active=True
+            )
+        except KikobaMembership.DoesNotExist:
+            return Response(
+                {"detail": "You are not a member of this kikoba"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get emergency fund contributions
+        emergency_contributions = EmergencyFundContribution.objects.filter(
+            kikoba_membership=membership
+        ).order_by('-contribution_date')
+        
+        contributions_data = []
+        total_emergency_fund = Decimal('0')
+        
+        for contribution in emergency_contributions:
+            contributions_data.append({
+                'id': contribution.id,
+                'amount': float(contribution.amount),
+                'contribution_date': contribution.contribution_date.isoformat(),
+                'notes': contribution.notes or ''
+            })
+            total_emergency_fund += contribution.amount
+        
+        return Response({
+            'kikoba': {
+                'id': kikoba.id,
+                'name': kikoba.name,
+                'kikoba_number': kikoba.kikoba_number
+            },
+            'user': {
+                'id': user.id,
+                'name': user.name,
+                'phone_number': user.phone_number
+            },
+            'summary': {
+                'total_amount': float(total_emergency_fund),
+                'total_contributions': len(contributions_data),
+                'is_reclaimable': False,
+                'note': 'Emergency fund stays with the kikoba and is not part of member payouts'
+            },
+            'contributions': contributions_data
+        })
 
 
 class KikobaMembershipViewSet(viewsets.ModelViewSet):

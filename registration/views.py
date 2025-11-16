@@ -30,13 +30,24 @@ def unified_registration(request):
                     description=kikoba_form.cleaned_data['kikoba_description'],
                     location=kikoba_form.cleaned_data['location'],
                     estimated_members=kikoba_form.cleaned_data['estimated_members'],
+                    group_type=kikoba_form.cleaned_data['group_type'],
                     creator_phone_number=phone_number  # Store the creator's phone number
                 )
                 if kikoba_form.cleaned_data.get('constitution_document'):
                     kikoba.constitution_document = kikoba_form.cleaned_data['constitution_document']
-                if kikoba_form.cleaned_data.get('other_documents'):
-                    kikoba.other_documents = kikoba_form.cleaned_data['other_documents']
                 kikoba.save()
+
+                # Handle multiple file uploads for other_documents
+                other_docs = request.FILES.getlist('kikoba-other_documents')
+                if other_docs:
+                    # For now, we'll just save the first file to the single FileField
+                    # In a real implementation, you might want to create a separate model for document storage
+                    kikoba.other_documents = other_docs[0]
+                    kikoba.save()
+                    
+                    # If you need to store multiple files, you would typically do something like:
+                    # for doc in other_docs:
+                    #     Document.objects.create(kikoba=kikoba, file=doc)
 
                 # Send SMS notification with the new Kikoba number
                 phone_number = kikoba_form.cleaned_data['admin_phone_number']
@@ -102,12 +113,13 @@ def unified_registration(request):
         'member_form': member_form
     })
 
+from django.shortcuts import redirect
+from django.urls import reverse
+
 def custom_logout(request):
-    """
-    Custom logout view that renders our custom template
-    """
+    """Custom logout view that redirects to the login page"""
     logout(request)
-    return render(request, 'registration/custom_logout.html')
+    return redirect(reverse('login'))
 
 # Remove or comment out the old views if they are no longer needed
 # def registration_choice(request):

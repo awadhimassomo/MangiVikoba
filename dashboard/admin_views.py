@@ -129,21 +129,28 @@ def investment_create(request):
             strengths = json.loads(post_data.get('strengths', '[]'))
             risks = json.loads(post_data.get('risks', '[]'))
             
-            # Create the investment
+            # Get and validate required fields
+            target_amount = post_data.get('target_amount')
+            if not target_amount:
+                messages.error(request, 'Target amount is required')
+                raise ValueError('Target amount is required')
+                
+            # Create the investment with all required fields
             investment = Investment.objects.create(
                 title=post_data.get('title'),
                 description=post_data.get('description', ''),
                 investment_type=post_data.get('investment_type', 'other'),
-                status='draft',  # Default status
+                status=post_data.get('status', 'draft'),
                 risk_level=post_data.get('risk_level', 'medium'),
-                minimum_amount=post_data.get('min_investment', 0) or 0,
-                current_price=post_data.get('current_price', 0) or 0,
-                expected_return_rate=post_data.get('expected_return', 0) or 0,
+                minimum_amount=float(post_data.get('minimum_amount', 0) or 0),
+                target_amount=float(target_amount),
+                current_price=float(post_data.get('current_price', 0) or 0),
+                expected_return_rate=float(post_data.get('expected_return_rate', 0) or 0),
                 start_date=timezone.now().date(),  # Default to today
                 end_date=timezone.now().date() + timezone.timedelta(days=365),  # Default 1 year
-                duration_months=post_data.get('duration_months', 12) or 12,
+                duration_months=int(post_data.get('duration_months', 12) or 12),
                 location=post_data.get('location', ''),
-                available_to_all_vikoba=True,  # Default to available to all
+                available_to_all_vikoba=post_data.get('available_to_all_vikoba') == 'on',
                 created_by=request.user,
                 
                 # Additional fields for the detailed description
@@ -195,8 +202,9 @@ def investment_create(request):
     
     # For GET request or if there's an error in POST
     context = {
-        'page_title': 'Create Investment Opportunity',
+        'page_title': 'Create New Investment',
         'investment_types': Investment.INVESTMENT_TYPE_CHOICES,
+        'statuses': Investment.STATUS_CHOICES,
         'risk_levels': [
             ('low', 'Low Risk'),
             ('medium', 'Medium Risk'),
@@ -325,7 +333,7 @@ def vikoba_management(request):
     
     # Annotate with member counts
     vikoba = vikoba.annotate(
-        member_count=Count('kikobamembership', filter=Q(kikobamembership__is_active=True))
+        member_count=Count('kikoba_memberships', filter=Q(kikoba_memberships__is_active=True))
     )
     
     paginator = Paginator(vikoba, 15)

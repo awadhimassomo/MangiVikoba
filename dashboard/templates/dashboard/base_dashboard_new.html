@@ -163,9 +163,6 @@
                 <a href="{% url 'dashboard:policy_management' %}" class="sidebar-link {% if 'policies' in request.path %}active{% endif %}">
                     <i class="fas fa-file-alt sidebar-icon"></i> Policies
                 </a>
-                <a href="{% url 'dashboard:emergency_funds' %}" class="sidebar-link {% if 'emergency_funds' in request.path or 'emergency' in request.path %}active{% endif %}">
-                    <i class="fas fa-life-ring sidebar-icon"></i> Emergency Funds
-                </a>
                 <a href="{% url 'dashboard:profile' %}" class="sidebar-link {% if 'profile' in request.path %}active{% endif %}">
                     <i class="fas fa-user-circle sidebar-icon"></i> Profile
                 </a>

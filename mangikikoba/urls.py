@@ -48,6 +48,7 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')), # Added dashboard urls
     
     # REST API v1 - Main API for mobile app
+    path('api/', include('dashboard.api_urls')),  # Include dashboard API endpoints
     path('api/v1/', include('api.urls')),
     
     # Legacy API endpoints (if still in use)

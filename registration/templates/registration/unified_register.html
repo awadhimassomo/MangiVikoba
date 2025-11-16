@@ -26,8 +26,57 @@
                             <h3 class="mb-4">Register a New Kikoba</h3>
                             <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
                                 {% csrf_token %}
-                                {{ kikoba_form|crispy }}
-                                <button type="submit" name="register_kikoba" class="btn btn-primary mt-3">Register Kikoba</button>
+                                
+                                <div class="mb-4">
+                                    <h5>Kikoba Type</h5>
+                                    <p class="text-muted">Select the financial model that best fits your group's needs. This will determine how profits and shares are calculated.</p>
+                                    
+                                    <div class="list-group mb-3">
+                                        {% for value, label in kikoba_form.group_type.field.choices %}
+                                            <label class="list-group-item d-flex align-items-center">
+                                                <input type="radio" 
+                                                       name="{{ kikoba_form.group_type.name }}" 
+                                                       value="{{ value }}" 
+                                                       class="form-check-input me-2"
+                                                       {% if kikoba_form.group_type.value == value or forloop.first and not kikoba_form.group_type.value %}checked{% endif %}
+                                                       required>
+                                                <div class="ms-2">
+                                                    <strong>{{ label }}</strong>
+                                                    <div class="text-muted small">
+                                                        {% if value == 'standard' %}
+                                                            Standard model with variable shares and profit distribution.
+                                                        {% elif value == 'fixed_share' %}
+                                                            Fixed share amounts for all members.
+                                                        {% elif value == 'interest_refund' %}
+                                                            Interest is refunded to members based on participation.
+                                                        {% elif value == 'rosca' %}
+                                                            Rotating savings and credit association model.
+                                                        {% elif value == 'welfare' %}
+                                                            Welfare/help group model for mutual aid.
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    {% if kikoba_form.group_type.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ kikoba_form.group_type.errors|join:", " }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Render all other fields except group_type -->
+                                {% for field in kikoba_form %}
+                                    {% if field.name != 'group_type' %}
+                                        {{ field|as_crispy_field }}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                <button type="submit" name="register_kikoba" class="btn btn-primary mt-3">
+                                    <i class="fas fa-save me-2"></i>Register Kikoba
+                                </button>
                             </form>
                         </div>
                         <div class="tab-pane fade" id="register-member" role="tabpanel" aria-labelledby="register-member-tab">

@@ -103,3 +103,29 @@ class PolicyLinkForm(forms.ModelForm):
             'url': forms.URLInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+class LoanImportForm(forms.Form):
+    """Form for importing loans via CSV file"""
+    csv_file = forms.FileField(
+        label='CSV File',
+        help_text='Upload a CSV file containing loan data. <a href="/dashboard/loans/import-template/" target="_blank">Download template</a>',
+        widget=forms.FileInput(attrs={
+            'accept': '.csv',
+            'class': 'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none',
+        })
+    )
+    
+    kikoba = forms.ModelChoiceField(
+        queryset=Kikoba.objects.all(),
+        label='Vikoba Group',
+        help_text='Select the Vikoba group these loans belong to',
+        widget=forms.Select(attrs={
+            'class': 'mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm rounded-md'
+        })
+    )
+    
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data['csv_file']
+        if not csv_file.name.endswith('.csv'):
+            raise forms.ValidationError('File is not a CSV file')
+        return csv_file

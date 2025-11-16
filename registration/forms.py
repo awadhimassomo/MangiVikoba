@@ -3,6 +3,29 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm, PasswordResetForm
 from django.core.exceptions import ValidationError
+from django.forms.widgets import Input
+
+class MultipleFileInput(Input):
+    input_type = 'file'
+    needs_multipart_form = True
+    template_name = 'django/forms/widgets/file.html'
+
+    def __init__(self, attrs=None):
+        if attrs is None:
+            attrs = {}
+        attrs['multiple'] = 'multiple'
+        super().__init__(attrs)
+
+    def value_from_datadict(self, data, files, name):
+        if hasattr(files, 'getlist'):
+            return files.getlist(name)
+        return [files.get(name)] if name in files else []
+
+    def value_omitted_from_data(self, data, files, name):
+        return False
+
+    def format_value(self, value):
+        return None  # Always return None for file inputs
 
 User = get_user_model()
 
@@ -165,13 +188,65 @@ class PINAuthenticationForm(AuthenticationForm):
     }
 
 class KikobaRegistrationForm(forms.Form):
-    admin_phone_number = forms.CharField(max_length=15, label="Your Phone Number")
-    kikoba_name = forms.CharField(max_length=255, label="Kikoba Name")
-    kikoba_description = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}), required=False, label="Kikoba Description")
-    location = forms.CharField(max_length=255, required=False, label="Location")
-    estimated_members = forms.ChoiceField(choices=Kikoba.ESTIMATED_MEMBERS_CHOICES, required=False, label="Estimated Number of Members")
-    constitution_document = forms.FileField(required=False, label="Constitution Document")
-    other_documents = forms.FileField(required=False, label="Other Documents")
+    admin_phone_number = forms.CharField(
+        max_length=15, 
+        label="Your Phone Number",
+        widget=forms.TextInput(attrs={
+            'placeholder': 'e.g., +255712345678',
+            'class': 'form-control'
+        })
+    )
+    kikoba_name = forms.CharField(
+        max_length=255, 
+        label="Kikoba Name",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    kikoba_description = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'rows': 3,
+            'class': 'form-control',
+            'placeholder': 'Brief description of your Kikoba group'
+        }), 
+        required=False, 
+        label="Kikoba Description"
+    )
+    group_type = forms.ChoiceField(
+        choices=Kikoba.GROUP_TYPE_CHOICES,
+        label="Kikoba Type",
+        help_text="Select the financial model for your Kikoba",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        initial='standard'
+    )
+    location = forms.CharField(
+        max_length=255, 
+        required=False, 
+        label="Location",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'e.g., Dar es Salaam, Tanzania'
+        })
+    )
+    estimated_members = forms.ChoiceField(
+        choices=Kikoba.ESTIMATED_MEMBERS_CHOICES, 
+        required=False, 
+        label="Estimated Number of Members",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    constitution_document = forms.FileField(
+        required=False, 
+        label="Constitution Document (Optional)",
+        help_text="Upload your Kikoba's constitution if available",
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )
+    other_documents = forms.FileField(
+        required=False, 
+        label="Other Documents (Optional)",
+        help_text="Upload any other relevant documents (multiple files allowed)",
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'multiple': True
+        })
+    )
 
     def clean_admin_phone_number(self):
         phone_number = self.cleaned_data.get('admin_phone_number')
