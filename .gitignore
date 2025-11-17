@@ -1,0 +1,112 @@
+# Django Database Files
+*.sqlite3
+*.db
+db.sqlite3
+
+# Python Cache Files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Django Stuff
+*.log
+local_settings.py
+db.sqlite3-journal
+
+# Environment Variables (CRITICAL - Never upload!)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Media Files (User Uploaded Content)
+media/
+kikoba_documents/
+*/media/*
+
+# Static Files (Collected)
+staticfiles/
+static_collected/
+*/staticfiles/*
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Celery
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# OS Files
+Thumbs.db
+.DS_Store
+
+# Sensitive Configuration Files
+secrets.json
+credentials.json
+*.pem
+*.key
+*.crt
