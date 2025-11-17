@@ -118,7 +118,10 @@
 
                 <!-- Kikoba Admin Modules -->
                 <a href="{% url 'dashboard:group_management' %}" class="sidebar-link module-nav-link {% if 'group-management' in request.path or request.resolver_match.url_name == 'group_management' %}active{% endif %}">
-                    <i class="fas fa-users-cog sidebar-icon"></i> Group Management
+                    <i class="fas fa-users sidebar-icon"></i> Group Management
+                </a>
+                <a href="{% url 'dashboard:invite_member' %}" class="sidebar-link module-nav-link {% if 'invite-member' in request.path %}active{% endif %}">
+                    <i class="fas fa-user-plus sidebar-icon"></i> Invite Members
                 </a>
                   <div>
                     <button type="button" class="contributions-dropdown-toggle sidebar-link module-nav-link w-full text-left flex justify-between items-center cursor-pointer {% if 'contributions/' in request.path or 'savings/' in request.path or 'emergency-fund/' in request.path or 'entry-fee/' in request.path or 'share-contribution/' in request.path %}active-parent{% endif %}">
@@ -142,6 +145,12 @@
                         </a>
                          <a href="{% if current_kikoba %}{% url 'groups:kikoba_contribution_config' kikoba_id=current_kikoba.id %}{% else %}#{% endif %}" class="sidebar-link text-sm {% if 'configure-contributions' in request.path %}active{% endif %}">
                             <i class="fas fa-cogs sidebar-icon text-xs"></i> Configure Contributions
+                        </a>
+                        <a href="{% url 'dashboard:batch_contributions' %}" class="sidebar-link text-sm {% if 'batch-contributions' in request.path %}active{% endif %}">
+                            <i class="fas fa-users-cog sidebar-icon text-xs"></i> Batch Contributions
+                        </a>
+                        <a href="{% url 'dashboard:csv_contributions_import' %}" class="sidebar-link text-sm {% if 'csv-import' in request.path %}active{% endif %}">
+                            <i class="fas fa-file-csv sidebar-icon text-xs"></i> CSV Import (Historical)
                         </a>
                     </div>
                 </div>

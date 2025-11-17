@@ -1,0 +1,311 @@
+{% extends "dashboard/base_dashboard_new.html" %}
+{% load static %}
+
+{% block title %}Batch Contributions - {{ current_kikoba.name }}{% endblock %}
+
+{% block page_title %}Batch Contributions{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-xl rounded-lg p-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-2">Batch Contribution Entry for {{ current_kikoba.name }}</h2>
+            <p class="text-gray-600">Enter contributions for multiple members at once using a single date period and contribution type.</p>
+        </div>
+
+        <!-- Batch Contribution Form -->
+        <form method="POST" class="mb-8" id="batchContributionForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">Error!</strong>
+                    <span class="block sm:inline">{{ form.non_field_errors|join:", " }}</span>
+                </div>
+            {% endif %}
+
+            <!-- Common Fields Section -->
+            <div class="bg-gradient-to-r from-red-50 to-pink-50 p-6 rounded-lg mb-6 border border-red-100">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                    <i class="fas fa-calendar-alt mr-2 text-red-600"></i>
+                    Common Information (applies to all contributions)
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Contribution Date -->
+                    <div>
+                        <label for="{{ form.contribution_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.contribution_date.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.contribution_date }}
+                        {% if form.contribution_date.errors %}
+                            {% for error in form.contribution_date.errors %}
+                                <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">{{ form.contribution_date.help_text }}</p>
+                    </div>
+
+                    <!-- Contribution Type -->
+                    <div>
+                        <label for="{{ form.contribution_type.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.contribution_type.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.contribution_type }}
+                        {% if form.contribution_type.errors %}
+                            {% for error in form.contribution_type.errors %}
+                                <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">{{ form.contribution_type.help_text }}</p>
+                    </div>
+
+                    <!-- Saving Cycle -->
+                    <div>
+                        <label for="{{ form.saving_cycle.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.saving_cycle.label }}
+                        </label>
+                        {{ form.saving_cycle }}
+                        {% if form.saving_cycle.errors %}
+                            {% for error in form.saving_cycle.errors %}
+                                <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mt-4">
+                    <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ form.description.label }}
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        {% for error in form.description.errors %}
+                            <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Members Contribution Table -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                    <i class="fas fa-users mr-2 text-red-600"></i>
+                    Enter Member Contributions
+                </h3>
+                
+                <div class="mb-3 flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <label for="bulkAmount" class="text-sm font-medium text-gray-700">Quick Fill Amount:</label>
+                        <input type="number" id="bulkAmount" step="0.01" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red text-sm w-32" placeholder="0.00">
+                        <button type="button" onclick="fillAllAmounts()" class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-fill mr-1"></i>Fill All
+                        </button>
+                        <button type="button" onclick="clearAllAmounts()" class="bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-eraser mr-1"></i>Clear All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-12">#</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Member Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone Number</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-48">Amount (TZS)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for member_item in members %}
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ forloop.counter }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ member_item.user.name }}</div>
+                                    <div class="text-xs text-gray-500">ID: {{ member_item.user.member_id|default:"N/A" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ member_item.user.phone_number }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input 
+                                        type="number" 
+                                        name="amount_{{ member_item.user.id }}" 
+                                        id="amount_{{ member_item.user.id }}"
+                                        step="0.01" 
+                                        min="0"
+                                        class="amount-input block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm" 
+                                        placeholder="0.00"
+                                        oninput="updateTotal()">
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">
+                                    No active members found in this Kikoba.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-gray-50">
+                            <tr>
+                                <td colspan="3" class="px-6 py-4 text-right text-sm font-bold text-gray-700">
+                                    Total Amount:
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-lg font-bold text-red-600" id="totalAmount">0.00 TZS</div>
+                                    <div class="text-xs text-gray-500" id="contributionCount">0 contributions</div>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex justify-end gap-3">
+                <a href="{% url 'dashboard:savings_contributions' %}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150">
+                    <i class="fas fa-times mr-2"></i>Cancel
+                </a>
+                <button type="submit" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-150">
+                    <i class="fas fa-save mr-2"></i>Save All Contributions
+                </button>
+            </div>
+        </form>
+
+        <!-- Recent Contributions Section -->
+        <div class="mt-8 pt-8 border-t border-gray-200">
+            <h3 class="text-xl font-medium text-gray-700 mb-4">Recent Contributions</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Member</th>
+                            <th class="py-3 px-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="py-3 px-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cycle</th>
+                            <th class="py-3 px-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Verified</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for contribution in recent_contributions %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm text-gray-900">{{ contribution.date_contributed|date:"Y-m-d" }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-900">{{ contribution.member.name }}</td>
+                            <td class="py-3 px-4 text-sm text-gray-900 text-right font-medium">{{ contribution.amount|floatformat:2 }} TZS</td>
+                            <td class="py-3 px-4 text-sm text-gray-600">{{ contribution.saving_cycle.name|default:"N/A" }}</td>
+                            <td class="py-3 px-4 text-center">
+                                {% if contribution.is_verified %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <i class="fas fa-check-circle mr-1"></i>Verified
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <i class="fas fa-clock mr-1"></i>Pending
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="py-6 px-4 text-center text-sm text-gray-500">No contributions recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Update total amount and contribution count
+    function updateTotal() {
+        const inputs = document.querySelectorAll('.amount-input');
+        let total = 0;
+        let count = 0;
+        
+        inputs.forEach(input => {
+            const value = parseFloat(input.value) || 0;
+            if (value > 0) {
+                total += value;
+                count++;
+            }
+        });
+        
+        document.getElementById('totalAmount').textContent = total.toFixed(2) + ' TZS';
+        document.getElementById('contributionCount').textContent = count + ' contribution' + (count !== 1 ? 's' : '');
+    }
+    
+    // Fill all amount inputs with the bulk amount
+    function fillAllAmounts() {
+        const bulkAmount = document.getElementById('bulkAmount').value;
+        if (bulkAmount && parseFloat(bulkAmount) > 0) {
+            const inputs = document.querySelectorAll('.amount-input');
+            inputs.forEach(input => {
+                input.value = bulkAmount;
+            });
+            updateTotal();
+        } else {
+            alert('Please enter a valid amount in the Quick Fill field.');
+        }
+    }
+    
+    // Clear all amount inputs
+    function clearAllAmounts() {
+        if (confirm('Are you sure you want to clear all entered amounts?')) {
+            const inputs = document.querySelectorAll('.amount-input');
+            inputs.forEach(input => {
+                input.value = '';
+            });
+            updateTotal();
+        }
+    }
+    
+    // Set today's date as default
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateInput = document.getElementById('{{ form.contribution_date.id_for_label }}');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+        updateTotal();
+    });
+    
+    // Form validation before submit
+    document.getElementById('batchContributionForm').addEventListener('submit', function(e) {
+        const dateInput = document.getElementById('{{ form.contribution_date.id_for_label }}');
+        const typeInput = document.getElementById('{{ form.contribution_type.id_for_label }}');
+        const inputs = document.querySelectorAll('.amount-input');
+        
+        let hasAmount = false;
+        inputs.forEach(input => {
+            if (input.value && parseFloat(input.value) > 0) {
+                hasAmount = true;
+            }
+        });
+        
+        if (!dateInput.value) {
+            e.preventDefault();
+            alert('Please select a contribution date.');
+            dateInput.focus();
+            return false;
+        }
+        
+        if (!typeInput.value) {
+            e.preventDefault();
+            alert('Please select a contribution type.');
+            typeInput.focus();
+            return false;
+        }
+        
+        if (!hasAmount) {
+            e.preventDefault();
+            alert('Please enter at least one contribution amount.');
+            return false;
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

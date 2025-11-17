@@ -1,0 +1,180 @@
+{% extends "dashboard/base_dashboard_new.html" %}
+{% load static %}
+
+{% block title %}Invite Members - {{ current_kikoba.name }}{% endblock %}
+
+{% block page_title %}Invite New Members{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-xl rounded-lg p-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-2">Invite Members to {{ current_kikoba.name }}</h2>
+            <p class="text-gray-600">Send invitation codes to new members via SMS. They'll register using the unique code.</p>
+        </div>
+
+        <!-- Invitation Form -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg mb-8 border border-blue-100">
+            <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                <i class="fas fa-user-plus mr-2 text-blue-600"></i>
+                Send New Invitation
+            </h3>
+            
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="phone_number" class="block text-sm font-medium text-gray-700 mb-1">
+                            Phone Number <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="tel" 
+                            id="phone_number" 
+                            name="phone_number" 
+                            required
+                            placeholder="+255687046323 or 0687046323"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Enter phone number with country code or starting with 0</p>
+                    </div>
+                    
+                    <div>
+                        <label for="role" class="block text-sm font-medium text-gray-700 mb-1">
+                            Member Role
+                        </label>
+                        <select 
+                            id="role" 
+                            name="role"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                            <option value="member">Member</option>
+                            <option value="treasurer">Treasurer</option>
+                            <option value="secretary">Secretary</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button 
+                        type="submit" 
+                        class="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-150">
+                        <i class="fas fa-paper-plane mr-2"></i>Send Invitation
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Pending Invitations -->
+        <div class="mb-8">
+            <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                <i class="fas fa-clock mr-2 text-yellow-600"></i>
+                Pending Invitations
+            </h3>
+            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invitation Code</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone Number</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Role</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invited By</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
+                            <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for invitation in pending_invitations %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-blue-100 text-blue-800">
+                                    {{ invitation.invitation_code }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invitation.email_or_phone }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">{{ invitation.role }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ invitation.invited_by.name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invitation.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-2">
+                                <a href="{% url 'dashboard:resend_invitation' invitation.id %}" 
+                                   class="text-blue-600 hover:text-blue-900"
+                                   title="Resend SMS">
+                                    <i class="fas fa-redo"></i>
+                                </a>
+                                <a href="{% url 'dashboard:cancel_invitation' invitation.id %}" 
+                                   class="text-red-600 hover:text-red-900"
+                                   title="Cancel Invitation"
+                                   onclick="return confirm('Cancel this invitation?')">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
+                                No pending invitations. Send an invitation to get started!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recently Accepted Invitations -->
+        <div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                <i class="fas fa-check-circle mr-2 text-green-600"></i>
+                Recently Joined Members
+            </h3>
+            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <table class="min-w-full bg-white">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code Used</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone Number</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Joined Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for invitation in accepted_invitations %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
+                                    {{ invitation.invitation_code }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ invitation.email_or_phone }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ invitation.updated_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-6 py-8 text-center text-sm text-gray-500">
+                                No members have joined yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Help Section -->
+        <div class="mt-8 bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">
+                <i class="fas fa-question-circle mr-2 text-gray-600"></i>
+                How It Works
+            </h3>
+            <div class="space-y-2 text-sm text-gray-600">
+                <p><strong>Step 1:</strong> Enter the phone number of the person you want to invite</p>
+                <p><strong>Step 2:</strong> System generates a unique code (e.g., <span class="font-mono bg-gray-200 px-2 py-1 rounded">{{ current_kikoba.name|slice:":2"|upper }}-123456</span>)</p>
+                <p><strong>Step 3:</strong> SMS with the code is sent to their phone</p>
+                <p><strong>Step 4:</strong> They register on the platform using the code</p>
+                <p><strong>Step 5:</strong> They're automatically added to {{ current_kikoba.name }}!</p>
+                
+                <div class="mt-4 p-3 bg-blue-50 rounded">
+                    <p class="text-blue-800"><strong>Note:</strong> SMS sending is currently in preview mode. The invitation code will be displayed here and you can share it manually.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -218,10 +218,19 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#">{% trans "Training Center" %}</a>
                     </li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'dashboard:home' %}">{% trans "Dashboard" %}</a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <div class="d-flex gap-2">
-                    <a href="{% url 'login' %}" class="btn btn-outline-modern">{% trans "Login" %}</a>
-                    <a href="{% url 'registration:unified_register' %}" class="btn btn-download-nav">{% trans "Register" %}</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'logout' %}" class="btn btn-outline-modern">{% trans "Logout" %}</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-outline-modern">{% trans "Login" %}</a>
+                        <a href="{% url 'registration:unified_register' %}" class="btn btn-download-nav">{% trans "Register" %}</a>
+                    {% endif %}
                 </div>
             </div>
         </div>

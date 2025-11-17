@@ -2,6 +2,7 @@ from django import forms
 from registration.models import User
 from loans.models import Loan 
 from groups.models import Kikoba # Changed from Group
+from savings.models import Contribution, SavingCycle
 from .models import PolicyLink
 
 class AddMemberForm(forms.Form):
@@ -129,3 +130,60 @@ class LoanImportForm(forms.Form):
         if not csv_file.name.endswith('.csv'):
             raise forms.ValidationError('File is not a CSV file')
         return csv_file
+
+class BatchContributionForm(forms.Form):
+    """Form for batch contribution entry with single date period"""
+    CONTRIBUTION_TYPE_CHOICES = [
+        ('', 'Select Type'),
+        ('shares', 'Shares'),
+        ('savings', 'Savings'),
+        ('entry_fee', 'Entry Fee'),
+        ('emergency_fund', 'Emergency Fund'),
+        ('other', 'Other'),
+    ]
+    
+    contribution_date = forms.DateField(
+        label='Contribution Date',
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm'
+        }),
+        help_text='Single date for all contributions in this batch'
+    )
+    
+    contribution_type = forms.ChoiceField(
+        choices=CONTRIBUTION_TYPE_CHOICES,
+        label='Contribution Type',
+        widget=forms.Select(attrs={
+            'class': 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm'
+        }),
+        help_text='Type applies to all contributions in this batch'
+    )
+    
+    saving_cycle = forms.ModelChoiceField(
+        queryset=SavingCycle.objects.none(),
+        required=False,
+        label='Saving Cycle (Optional)',
+        widget=forms.Select(attrs={
+            'class': 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm'
+        }),
+        empty_label='No cycle selected'
+    )
+    
+    description = forms.CharField(
+        required=False,
+        label='Description (Optional)',
+        widget=forms.Textarea(attrs={
+            'class': 'mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm',
+            'rows': 2,
+            'placeholder': 'Optional: Add a description for this batch of contributions'
+        })
+    )
+    
+    def __init__(self, *args, kikoba=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if kikoba:
+            self.fields['saving_cycle'].queryset = SavingCycle.objects.filter(
+                kikoba=kikoba,
+                is_active=True
+            )

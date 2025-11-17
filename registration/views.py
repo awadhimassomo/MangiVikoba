@@ -11,7 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserRegistrationSerializer, UserSerializer, UpdateUserSerializer
 from .forms import KikobaRegistrationForm, MemberRegistrationForm, PINSetPasswordForm
 from .models import PasswordResetOTP
-from groups.models import Kikoba, KikobaMembership
+from groups.models import Kikoba, KikobaMembership, KikobaInvitation
 from sms.utils import send_sms
 
 User = get_user_model()
@@ -95,12 +95,32 @@ def unified_registration(request):
                     else:
                         role = 'member'
 
-                    # Create the membership with the correct role
-                    KikobaMembership.objects.get_or_create(
-                        user=user,
+                    # Check if user was invited (has pending invitation)
+                    pending_invitation = KikobaInvitation.objects.filter(
                         kikoba=kikoba,
-                        defaults={'role': role, 'is_active': True}
-                    )
+                        email_or_phone=user.phone_number,
+                        status='pending'
+                    ).first()
+                    
+                    # Auto-approve if invited, otherwise pending approval
+                    if pending_invitation:
+                        # Invited member - auto-approve
+                        membership, created = KikobaMembership.objects.get_or_create(
+                            user=user,
+                            kikoba=kikoba,
+                            defaults={'role': role, 'is_active': True}
+                        )
+                        
+                        # Mark invitation as accepted
+                        pending_invitation.status = 'accepted'
+                        pending_invitation.save()
+                    else:
+                        # Self-registered - pending approval
+                        membership, created = KikobaMembership.objects.get_or_create(
+                            user=user,
+                            kikoba=kikoba,
+                            defaults={'role': role, 'is_active': False}  # Pending approval
+                        )
                 
                 # Log the user in
                 user.backend = 'django.contrib.auth.backends.ModelBackend'

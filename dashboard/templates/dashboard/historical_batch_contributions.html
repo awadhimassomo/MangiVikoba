@@ -1,0 +1,309 @@
+{% extends "dashboard/base_dashboard_new.html" %}
+{% load static %}
+
+{% block title %}Historical Batch Entry - {{ current_kikoba.name }}{% endblock %}
+
+{% block page_title %}Historical Batch Contributions{% endblock %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-xl rounded-lg p-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-2">Historical Batch Entry for {{ current_kikoba.name }}</h2>
+            <p class="text-gray-600">Enter multiple months of contributions for all members at once. Perfect for importing historical data!</p>
+        </div>
+
+        <!-- Configuration Section -->
+        <form method="POST" id="historicalBatchForm">
+            {% csrf_token %}
+            
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg mb-6 border border-blue-100">
+                <h3 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+                    <i class="fas fa-cog mr-2 text-blue-600"></i>
+                    Configure Period Range
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div>
+                        <label for="startDate" class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="startDate" name="start_date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm">
+                    </div>
+                    
+                    <div>
+                        <label for="endDate" class="block text-sm font-medium text-gray-700 mb-1">End Date <span class="text-red-500">*</span></label>
+                        <input type="date" id="endDate" name="end_date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm">
+                    </div>
+                    
+                    <div>
+                        <label for="frequency" class="block text-sm font-medium text-gray-700 mb-1">Frequency <span class="text-red-500">*</span></label>
+                        <select id="frequency" name="frequency" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm">
+                            <option value="monthly">Monthly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="biweekly">Bi-Weekly</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="contributionType" class="block text-sm font-medium text-gray-700 mb-1">Type <span class="text-red-500">*</span></label>
+                        <select id="contributionType" name="contribution_type" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-bright-red focus:border-bright-red sm:text-sm">
+                            <option value="">Select Type</option>
+                            <option value="shares">Shares</option>
+                            <option value="savings">Savings</option>
+                            <option value="entry_fee">Entry Fee</option>
+                            <option value="emergency_fund">Emergency Fund</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="button" onclick="generatePeriods()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150">
+                        <i class="fas fa-table mr-2"></i>Generate Entry Grid
+                    </button>
+                    <button type="button" onclick="fillAllWithAmount()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150">
+                        <i class="fas fa-fill mr-2"></i>Quick Fill All
+                    </button>
+                    <button type="button" onclick="clearAll()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow hover:shadow-md transition-all duration-150">
+                        <i class="fas fa-eraser mr-2"></i>Clear All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Period Grid Container -->
+            <div id="gridContainer" class="mb-6" style="display:none;">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">
+                        <i class="fas fa-calendar-alt mr-2 text-red-600"></i>
+                        Contribution Entry Grid
+                    </h3>
+                    <div class="text-sm text-gray-600">
+                        <span id="periodCount">0</span> periods × <span id="memberCount">{{ members|length }}</span> members = <span id="totalCells">0</span> cells
+                    </div>
+                </div>
+                
+                <!-- Scrollable table wrapper -->
+                <div class="overflow-auto border border-gray-300 rounded-lg" style="max-height: 600px;">
+                    <table class="min-w-full bg-white" id="contributionGrid">
+                        <thead class="bg-gray-100 sticky top-0 z-10">
+                            <tr id="periodHeaders">
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase sticky left-0 bg-gray-100 z-20 border-r-2 border-gray-300">Member</th>
+                                <!-- Period columns will be generated here -->
+                            </tr>
+                        </thead>
+                        <tbody id="contributionBody">
+                            <!-- Rows will be generated here -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-semibold text-gray-700">Total Summary</h4>
+                            <p class="text-sm text-gray-600">Total Amount: <span id="grandTotal" class="font-bold text-blue-600">0.00 TZS</span></p>
+                            <p class="text-sm text-gray-600">Filled Entries: <span id="filledCount" class="font-bold text-green-600">0</span> / <span id="totalCells2">0</span></p>
+                        </div>
+                        <button type="submit" class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transition-all duration-150">
+                            <i class="fas fa-save mr-2"></i>Save All Contributions
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+const members = {{ members_json|safe }};
+let periods = [];
+
+function generatePeriods() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const frequency = document.getElementById('frequency').value;
+    const contributionType = document.getElementById('contributionType').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates.');
+        return;
+    }
+    
+    if (!contributionType) {
+        alert('Please select a contribution type.');
+        return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (start >= end) {
+        alert('End date must be after start date.');
+        return;
+    }
+    
+    // Generate periods based on frequency
+    periods = [];
+    let current = new Date(start);
+    
+    while (current <= end) {
+        periods.push(new Date(current));
+        
+        if (frequency === 'monthly') {
+            current.setMonth(current.getMonth() + 1);
+        } else if (frequency === 'weekly') {
+            current.setDate(current.getDate() + 7);
+        } else if (frequency === 'biweekly') {
+            current.setDate(current.getDate() + 14);
+        }
+    }
+    
+    if (periods.length > 50) {
+        if (!confirm(`This will create ${periods.length} periods. Are you sure? (This might be slow)`)) {
+            return;
+        }
+    }
+    
+    renderGrid();
+    document.getElementById('gridContainer').style.display = 'block';
+    document.getElementById('periodCount').textContent = periods.length;
+    document.getElementById('totalCells').textContent = periods.length * members.length;
+    document.getElementById('totalCells2').textContent = periods.length * members.length;
+}
+
+function renderGrid() {
+    // Generate headers
+    const headerRow = document.getElementById('periodHeaders');
+    headerRow.innerHTML = '<th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase sticky left-0 bg-gray-100 z-20 border-r-2 border-gray-300" style="min-width: 200px;">Member</th>';
+    
+    periods.forEach((period, idx) => {
+        const monthYear = period.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        headerRow.innerHTML += `
+            <th class="px-3 py-3 text-center text-xs font-semibold text-gray-500 uppercase" style="min-width: 120px;">
+                ${monthYear}
+                <br><span class="text-xs font-normal">${period.toISOString().split('T')[0]}</span>
+            </th>
+        `;
+    });
+    
+    // Generate rows
+    const tbody = document.getElementById('contributionBody');
+    tbody.innerHTML = '';
+    
+    members.forEach((member, memberIdx) => {
+        let row = `
+            <tr class="hover:bg-gray-50 border-b">
+                <td class="px-4 py-3 sticky left-0 bg-white z-10 border-r-2 border-gray-200" style="min-width: 200px;">
+                    <div class="font-medium text-gray-900">${member.name}</div>
+                    <div class="text-xs text-gray-500">${member.phone}</div>
+                </td>
+        `;
+        
+        periods.forEach((period, periodIdx) => {
+            const dateStr = period.toISOString().split('T')[0];
+            const inputId = `amount_${member.id}_${dateStr}`;
+            row += `
+                <td class="px-2 py-2 text-center">
+                    <input 
+                        type="number" 
+                        name="${inputId}"
+                        id="${inputId}"
+                        step="0.01" 
+                        min="0"
+                        class="contribution-input w-full px-2 py-1 border border-gray-300 rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500" 
+                        placeholder="0"
+                        oninput="updateTotals()">
+                </td>
+            `;
+        });
+        
+        row += '</tr>';
+        tbody.innerHTML += row;
+    });
+    
+    updateTotals();
+}
+
+function fillAllWithAmount() {
+    const amount = prompt('Enter the amount to fill all cells:');
+    if (amount && !isNaN(amount) && parseFloat(amount) > 0) {
+        document.querySelectorAll('.contribution-input').forEach(input => {
+            input.value = amount;
+        });
+        updateTotals();
+    }
+}
+
+function clearAll() {
+    if (confirm('Are you sure you want to clear all entries?')) {
+        document.querySelectorAll('.contribution-input').forEach(input => {
+            input.value = '';
+        });
+        updateTotals();
+    }
+}
+
+function updateTotals() {
+    const inputs = document.querySelectorAll('.contribution-input');
+    let total = 0;
+    let filled = 0;
+    
+    inputs.forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        if (value > 0) {
+            total += value;
+            filled++;
+        }
+    });
+    
+    document.getElementById('grandTotal').textContent = total.toFixed(2) + ' TZS';
+    document.getElementById('filledCount').textContent = filled;
+}
+
+// Set default dates (last 3 months to current)
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const threeMonthsAgo = new Date(today);
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+    document.getElementById('startDate').value = threeMonthsAgo.toISOString().split('T')[0];
+});
+
+// Form validation
+document.getElementById('historicalBatchForm').addEventListener('submit', function(e) {
+    const inputs = document.querySelectorAll('.contribution-input');
+    let hasData = false;
+    
+    inputs.forEach(input => {
+        if (input.value && parseFloat(input.value) > 0) {
+            hasData = true;
+        }
+    });
+    
+    if (!hasData) {
+        e.preventDefault();
+        alert('Please enter at least one contribution amount.');
+        return false;
+    }
+    
+    if (!confirm('Are you sure you want to save all these contributions?')) {
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+
+<style>
+.contribution-input:focus {
+    background-color: #fef3c7;
+}
+
+#contributionGrid thead th {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#contributionGrid tbody td:first-child {
+    box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+}
+</style>
+{% endblock %}

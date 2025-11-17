@@ -141,13 +141,35 @@ class KikobaInvitation(models.Model): # Renamed from GroupInvitation
     kikoba = models.ForeignKey(Kikoba, on_delete=models.CASCADE, related_name='kikoba_invitations') 
     invited_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_kikoba_invitations') # Updated related_name
     email_or_phone = models.CharField(max_length=255) 
+    invitation_code = models.CharField(max_length=20, unique=True, blank=True, help_text='Unique invitation code (e.g., WA-123456)')
     role = models.CharField(max_length=15, choices=KikobaMembership.ROLE_CHOICES, default='member')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.invitation_code:
+            # Generate unique code with Kikoba prefix
+            import random
+            import string
+            
+            # Get first 2 letters of Kikoba name (uppercase)
+            prefix = self.kikoba.name[:2].upper()
+            
+            # Generate 6-digit random number
+            while True:
+                code_number = ''.join(random.choices(string.digits, k=6))
+                code = f"{prefix}-{code_number}"
+                
+                # Check if code already exists
+                if not KikobaInvitation.objects.filter(invitation_code=code).exists():
+                    self.invitation_code = code
+                    break
+        
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"Invitation for {self.email_or_phone} to {self.kikoba.name}" # Updated to self.kikoba.name
+        return f"Invitation {self.invitation_code} for {self.email_or_phone} to {self.kikoba.name}" # Updated to self.kikoba.name
 
 # Consider renaming this model to KikobaInvitation if it's actively used.
 # For now, I've updated its ForeignKey to Kikoba.

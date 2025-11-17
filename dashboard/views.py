@@ -2,11 +2,15 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Count, Sum, Q
-from .forms import AddMemberForm, AddLoanForm, PolicyLinkForm
+from django.utils import timezone
+from django.db import transaction
+import json
+from .forms import AddMemberForm, AddLoanForm, PolicyLinkForm, BatchContributionForm
 from .models import PolicyLink
 from registration.models import User 
 from loans.models import Loan, LoanApplication
 from groups.models import Kikoba, KikobaMembership
+from savings.models import Contribution
 from django.contrib.admin.views.decorators import staff_member_required
 
 # Create your views here.
@@ -93,16 +97,86 @@ def kikoba_admin_dashboard(request, kikoba_id=None):
         )
         current_kikoba = admin_membership.kikoba
     
-    # Fetch data for the dashboard
+    # Fetch analytics data for the dashboard
+    from django.db.models import Sum, Count
+    from savings.models import Contribution
+    from groups.models import ShareContribution
+    
+    # Member statistics
     total_members = KikobaMembership.objects.filter(kikoba=current_kikoba, is_active=True).count()
+    
+    # Contribution statistics
+    total_contributions = Contribution.objects.filter(kikoba=current_kikoba).aggregate(
+        total=Sum('amount'),
+        count=Count('id')
+    )
+    total_contributions_amount = total_contributions['total'] or 0
+    total_contributions_count = total_contributions['count'] or 0
+    
+    # Share contributions
+    total_share_contributions = ShareContribution.objects.filter(
+        kikoba_membership__kikoba=current_kikoba
+    ).aggregate(
+        total=Sum('amount_paid'),
+        count=Count('id')
+    )
+    total_shares_amount = total_share_contributions['total'] or 0
+    total_shares_count = total_share_contributions['count'] or 0
+    
+    # Loan statistics
     total_loans = Loan.objects.filter(application__kikoba=current_kikoba).count()
+    total_loans_amount = Loan.objects.filter(application__kikoba=current_kikoba).aggregate(
+        total=Sum('disbursed_amount')
+    )['total'] or 0
+    
+    # Calculate outstanding balance from total_repayable minus repayments
+    active_loans = Loan.objects.filter(
+        application__kikoba=current_kikoba,
+        status__in=['active', 'overdue']
+    )
+    active_loans_count = active_loans.count()
+    
+    # Calculate outstanding balance (total_repayable for active loans)
+    outstanding_balance = active_loans.aggregate(
+        total=Sum('total_repayable')
+    )['total'] or 0
+    
+    # Recent activity - last 10 contributions
+    recent_contributions = Contribution.objects.filter(
+        kikoba=current_kikoba
+    ).select_related('member').order_by('-date_contributed')[:10]
+    
+    # Recent share contributions
+    recent_share_contributions = ShareContribution.objects.filter(
+        kikoba_membership__kikoba=current_kikoba
+    ).select_related('kikoba_membership__user').order_by('-period_start')[:5]
+    
+    # Calculate total collected (contributions + shares)
+    total_collected = total_contributions_amount + total_shares_amount
 
     context = {
         'page_title': f'Admin Dashboard - {current_kikoba.name}',
         'current_kikoba': current_kikoba,
+        
+        # Member stats
         'total_members': total_members,
+        
+        # Contribution stats
+        'total_contributions_amount': total_contributions_amount,
+        'total_contributions_count': total_contributions_count,
+        'total_shares_amount': total_shares_amount,
+        'total_shares_count': total_shares_count,
+        'total_collected': total_collected,
+        
+        # Loan stats
         'total_loans': total_loans,
-        'total_savings': '1,250,000 TZS', # Placeholder
+        'total_loans_amount': total_loans_amount,
+        'active_loans_count': active_loans_count,
+        'outstanding_balance': outstanding_balance,
+        
+        # Recent activity
+        'recent_contributions': recent_contributions,
+        'recent_share_contributions': recent_share_contributions,
     }
 
     return render(request, 'dashboard/kikoba_admin_dashboard.html', context)
@@ -807,6 +881,210 @@ def savings_contributions_view(request):
         'members': members,
     }
     return render(request, 'dashboard/savings_contributions.html', context)
+
+@login_required
+def batch_contributions_view(request):
+    """View for adding multiple contributions at once with a single date period"""
+    admin_membership = KikobaMembership.objects.filter(
+        user=request.user, 
+        role__in=['kikoba_admin', 'chairperson', 'treasurer'], 
+        is_active=True
+    ).select_related('kikoba').first()
+    
+    if not admin_membership:
+        messages.error(request, "You do not have administrative access.")
+        return redirect('dashboard:home')
+    
+    current_kikoba = admin_membership.kikoba
+    members = KikobaMembership.objects.filter(
+        kikoba=current_kikoba, 
+        is_active=True
+    ).select_related('user').order_by('user__name')
+    
+    if request.method == 'POST':
+        form = BatchContributionForm(request.POST, kikoba=current_kikoba)
+        
+        if form.is_valid():
+            contribution_date = form.cleaned_data['contribution_date']
+            contribution_type = form.cleaned_data['contribution_type']
+            saving_cycle = form.cleaned_data.get('saving_cycle')
+            description = form.cleaned_data.get('description', '')
+            
+            # Get member contributions from POST data
+            contributions_data = []
+            success_count = 0
+            error_count = 0
+            
+            for member_item in members:
+                member = member_item.user
+                amount_key = f'amount_{member.id}'
+                amount = request.POST.get(amount_key, '').strip()
+                
+                if amount and float(amount) > 0:
+                    contributions_data.append({
+                        'member': member,
+                        'amount': float(amount)
+                    })
+            
+            if not contributions_data:
+                messages.warning(request, "No contributions were entered. Please enter at least one amount.")
+            else:
+                # Create all contributions in a transaction
+                try:
+                    with transaction.atomic():
+                        for contrib_data in contributions_data:
+                            Contribution.objects.create(
+                                member=contrib_data['member'],
+                                kikoba=current_kikoba,
+                                saving_cycle=saving_cycle,
+                                amount=contrib_data['amount'],
+                                date_contributed=contribution_date,
+                                transaction_reference=f"{contribution_type.upper()}_{contribution_date}",
+                                is_verified=True,
+                                verified_by=request.user,
+                                verified_at=timezone.now()
+                            )
+                            success_count += 1
+                        
+                        messages.success(
+                            request, 
+                            f"Successfully recorded {success_count} contribution(s) for {contribution_type} on {contribution_date}."
+                        )
+                        return redirect('dashboard:batch_contributions')
+                        
+                except Exception as e:
+                    messages.error(request, f"Error saving contributions: {str(e)}")
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = BatchContributionForm(kikoba=current_kikoba)
+    
+    # Get recent batch contributions for display
+    recent_contributions = Contribution.objects.filter(
+        kikoba=current_kikoba
+    ).select_related('member', 'verified_by', 'saving_cycle').order_by('-date_contributed')[:50]
+    
+    context = {
+        'page_title': f'Batch Contributions - {current_kikoba.name}',
+        'current_kikoba': current_kikoba,
+        'members': members,
+        'form': form,
+        'recent_contributions': recent_contributions,
+    }
+    return render(request, 'dashboard/batch_contributions.html', context)
+
+@login_required
+def historical_batch_contributions_view(request):
+    """View for entering multiple periods of contributions at once (historical data entry)"""
+    from datetime import datetime, timedelta
+    import csv
+    from io import StringIO
+    from django.http import HttpResponse
+    
+    admin_membership = KikobaMembership.objects.filter(
+        user=request.user, 
+        role__in=['kikoba_admin', 'chairperson', 'treasurer'], 
+        is_active=True
+    ).select_related('kikoba').first()
+    
+    if not admin_membership:
+        messages.error(request, "You do not have administrative access.")
+        return redirect('dashboard:home')
+    
+    current_kikoba = admin_membership.kikoba
+    members = KikobaMembership.objects.filter(
+        kikoba=current_kikoba, 
+        is_active=True
+    ).select_related('user').order_by('user__name')
+    
+    if request.method == 'POST':
+        start_date_str = request.POST.get('start_date')
+        end_date_str = request.POST.get('end_date')
+        frequency = request.POST.get('frequency', 'monthly')
+        contribution_type = request.POST.get('contribution_type')
+        
+        if not all([start_date_str, end_date_str, contribution_type]):
+            messages.error(request, "Please fill in all required fields.")
+        else:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                
+                # Generate periods
+                periods = []
+                current = start_date
+                
+                while current <= end_date:
+                    periods.append(current)
+                    if frequency == 'monthly':
+                        current = (datetime.combine(current, datetime.min.time()) + relativedelta(months=1)).date()
+                    elif frequency == 'weekly':
+                        current = current + timedelta(days=7)
+                    elif frequency == 'biweekly':
+                        current = current + timedelta(days=14)
+                
+                # Process contributions
+                contributions_to_create = []
+                success_count = 0
+                
+                for member_item in members:
+                    member = member_item.user
+                    for period_date in periods:
+                        amount_key = f'amount_{member.id}_{period_date}'
+                        amount = request.POST.get(amount_key, '').strip()
+                        
+                        if amount and float(amount) > 0:
+                            contributions_to_create.append(
+                                Contribution(
+                                    member=member,
+                                    kikoba=current_kikoba,
+                                    amount=float(amount),
+                                    date_contributed=period_date,
+                                    transaction_reference=f"{contribution_type.upper()}_{period_date}",
+                                    is_verified=True,
+                                    verified_by=request.user,
+                                    verified_at=timezone.now()
+                                )
+                            )
+                
+                if not contributions_to_create:
+                    messages.warning(request, "No contributions were entered. Please enter at least one amount.")
+                else:
+                    # Bulk create all contributions in a transaction
+                    try:
+                        with transaction.atomic():
+                            Contribution.objects.bulk_create(contributions_to_create)
+                            success_count = len(contributions_to_create)
+                            
+                            messages.success(
+                                request, 
+                                f"Successfully recorded {success_count} contribution(s) across {len(periods)} period(s) for {contribution_type}."
+                            )
+                            return redirect('dashboard:historical_batch_contributions')
+                            
+                    except Exception as e:
+                        messages.error(request, f"Error saving contributions: {str(e)}")
+                        
+            except ValueError as e:
+                messages.error(request, f"Invalid date format: {str(e)}")
+    
+    # Prepare members data as JSON for JavaScript
+    members_data = [
+        {
+            'id': member_item.user.id,
+            'name': member_item.user.name,
+            'phone': member_item.user.phone_number
+        }
+        for member_item in members
+    ]
+    
+    context = {
+        'page_title': f'Historical Batch Entry - {current_kikoba.name}',
+        'current_kikoba': current_kikoba,
+        'members': members,
+        'members_json': json.dumps(members_data),
+    }
+    return render(request, 'dashboard/historical_batch_contributions.html', context)
 
 @login_required
 def credit_score_engine_view(request):
