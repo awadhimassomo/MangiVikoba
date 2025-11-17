@@ -35,10 +35,12 @@
                                         {% for value, label in kikoba_form.group_type.field.choices %}
                                             <label class="list-group-item d-flex align-items-center">
                                                 <input type="radio" 
-                                                       name="{{ kikoba_form.group_type.name }}" 
+                                                       name="kikoba-group_type" 
+                                                       id="kikoba-group_type-{{ value }}" 
                                                        value="{{ value }}" 
                                                        class="form-check-input me-2"
-                                                       {% if kikoba_form.group_type.value == value or forloop.first and not kikoba_form.group_type.value %}checked{% endif %}
+                                                       {% if kikoba_form.group_type.value == value %}checked{% endif %}
+                                                       {% if not kikoba_form.group_type.value and value == 'standard' %}checked{% endif %}
                                                        required>
                                                 <div class="ms-2">
                                                     <strong>{{ label }}</strong>
@@ -62,7 +64,7 @@
                                     
                                     {% if kikoba_form.group_type.errors %}
                                         <div class="invalid-feedback d-block">
-                                            {{ kikoba_form.group_type.errors|join:", " }}
+                                            {{ kikoba_form.group_type.errors|join:"," }}
                                         </div>
                                     {% endif %}
                                 </div>

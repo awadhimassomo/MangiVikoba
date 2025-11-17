@@ -24,18 +24,26 @@ def unified_registration(request):
         if 'register_kikoba' in request.POST:
             if kikoba_form.is_valid():
                 phone_number = kikoba_form.cleaned_data['admin_phone_number']
+                group_type = kikoba_form.cleaned_data.get('group_type', 'standard')
+                
+                # Debug: Print the group_type to console (you can remove this after testing)
+                print(f"DEBUG: Group Type from form: {group_type}")
+                
                 # Create the Kikoba instance with the creator's phone number
                 kikoba = Kikoba(
                     name=kikoba_form.cleaned_data['kikoba_name'],
                     description=kikoba_form.cleaned_data['kikoba_description'],
                     location=kikoba_form.cleaned_data['location'],
                     estimated_members=kikoba_form.cleaned_data['estimated_members'],
-                    group_type=kikoba_form.cleaned_data['group_type'],
+                    group_type=group_type,
                     creator_phone_number=phone_number  # Store the creator's phone number
                 )
                 if kikoba_form.cleaned_data.get('constitution_document'):
                     kikoba.constitution_document = kikoba_form.cleaned_data['constitution_document']
                 kikoba.save()
+                
+                # Debug: Verify it was saved
+                print(f"DEBUG: Kikoba saved with group_type: {kikoba.group_type}")
 
                 # Handle multiple file uploads for other_documents
                 other_docs = request.FILES.getlist('kikoba-other_documents')
