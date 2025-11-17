@@ -94,7 +94,9 @@ def unified_registration(request):
                     kikoba = Kikoba.objects.get(kikoba_number=kikoba_number)
                     
                     # Check if this user is the creator of the kikoba
-                    if kikoba.creator_phone_number == user.phone_number:
+                    is_creator = kikoba.creator_phone_number == user.phone_number
+                    
+                    if is_creator:
                         role = 'chairperson'
                         # Now that the user exists, link them as the creator
                         kikoba.created_by = user
@@ -110,20 +112,21 @@ def unified_registration(request):
                         status='pending'
                     ).first()
                     
-                    # Auto-approve if invited, otherwise pending approval
-                    if pending_invitation:
-                        # Invited member - auto-approve
+                    # Auto-approve if invited OR if they are the creator
+                    if pending_invitation or is_creator:
+                        # Invited member or creator - auto-approve
                         membership, created = KikobaMembership.objects.get_or_create(
                             user=user,
                             kikoba=kikoba,
                             defaults={'role': role, 'is_active': True}
                         )
                         
-                        # Mark invitation as accepted
-                        pending_invitation.status = 'accepted'
-                        pending_invitation.save()
+                        # Mark invitation as accepted if it exists
+                        if pending_invitation:
+                            pending_invitation.status = 'accepted'
+                            pending_invitation.save()
                     else:
-                        # Self-registered - pending approval
+                        # Self-registered non-creator - pending approval
                         membership, created = KikobaMembership.objects.get_or_create(
                             user=user,
                             kikoba=kikoba,
